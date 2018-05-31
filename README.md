@@ -9,6 +9,42 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 For now, the Vanilla 2013R version is the only one residing here, more are on their way.
 
+## Usage
+
+### Notebooks
+
+Self contained notebooks can be found in the [notebooks](/notebooks) directory that run default instances of each model, plot the major results and compare the output with original source data (where available).
+
+The best way to use these is to run a notebook server from a cloned copy of this repository:
+
+```shell
+$ git clone git@github.com:Libbum/DICE.jl.git
+$ cd DICE.jl/notebooks
+$ jupyter notebook
+```
+
+and follow the generated link to your browser.
+
+### Module
+
+Using the module gives your greater control over the inputs of the system, and ultimately allows you to compare different versions of the model with the same input data (if possible and permitted).
+
+```julia
+Pkg.clone("git://github.com/Libbum/DICE.jl.git")
+using DICE
+```
+
+gives you a handle to the `CO₂` optimised model.
+
+A sample input file may look something like this:
+
+```julia
+using JuMP;
+using DICE;
+
+solve(vanilla_2013)
+```
+
 ## License
 
 The code herein is distributed under the MIT license, so feel free to distribute it as you will under its terms.
