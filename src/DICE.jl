@@ -6,7 +6,9 @@ using JuMP;
 using Ipopt;
 
 include("2013RVanilla.jl")
+include("2013RRockyRoad.jl")
 
-export vanilla_2013R, vanilla_2013R_options
+export vanilla_2013R, vanilla_2013R_options,
+       rockyroad_2013R, rockyroad_2013R_options, rr_scenarios
 
 end
