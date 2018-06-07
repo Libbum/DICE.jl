@@ -1,8 +1,15 @@
-struct BasePrice <: Scenario end
-struct OptimalPrice <: Scenario end
-struct L2 <: Scenario end
-struct Stern <: Scenario end
-struct SternCalibrated <: Scenario end
-struct Copenhagen <: Scenario end
+struct BasePriceScenario <: Scenario end
+struct OptimalPriceScenario <: Scenario end
+struct L2Scenario <: Scenario end
+struct SternScenario <: Scenario end
+struct SternCalibratedScenario <: Scenario end
+struct CopenhagenScenario <: Scenario end
 
-export BasePrice, OptimalPrice, L2, Stern, Calibrated, Copenhagen
+BasePrice = BasePriceScenario()
+OptimalPrice = OptimalPriceScenario()
+L2 = L2Scenario()
+Stern = SternScenario()
+SternCalibrated = SternCalibratedScenario()
+Copenhagen = CopenhagenScenario()
+
+export BasePrice, OptimalPrice, L2, Stern, SternCalibrated, Copenhagen

@@ -11,7 +11,9 @@ abstract type Version end
 #Scenarios
 abstract type Scenario end
 
-#solve(OptimalPrice(), v2013R(RockyRoad())) for example
+#solve(BasePrice, v2013R(RockyRoad)) for example
+# Don't alias version (ie keep it as v2016R()) so as not to confuse
+# v2013R (generic function with 2 methods)
 function solve(s::Scenario, v::Version)
     println("Solving $(s) scenario using $(v)...")
 end

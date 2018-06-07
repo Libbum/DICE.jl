@@ -1,10 +1,13 @@
 # Flavours
 abstract type Flavour end
-struct Vanilla <: Flavour end
-struct RockyRoad <: Flavour end
+struct VanillaFlavour <: Flavour end
+struct RockyRoadFlavour <: Flavour end
 
-Base.show(io::IO, f::Vanilla) = print(io, "Vanilla flavour")
-Base.show(io::IO, f::RockyRoad) = print(io, "Rocky Road flavour")
+Base.show(io::IO, f::VanillaFlavour) = print(io, "Vanilla flavour")
+Base.show(io::IO, f::RockyRoadFlavour) = print(io, "Rocky Road flavour")
+
+Vanilla = VanillaFlavour()
+RockyRoad = RockyRoadFlavour()
 
 export Vanilla, RockyRoad
 
@@ -14,9 +17,10 @@ end
 
 Base.show(io::IO, v::V2013R) = print(io, "v2013R ($(v.flavour))")
 
-function v2013R(flavour::T = Vanilla()) where {T<:Flavour}
+function v2013R(flavour::T = VanillaFlavour()) where {T<:Flavour}
     V2013R{T}(flavour)
 end
+
 
 export v2013R
 
