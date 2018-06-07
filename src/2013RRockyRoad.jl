@@ -1,4 +1,4 @@
-struct RockyRoad2013ROptions
+struct RockyRoadOptions <: Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
@@ -58,7 +58,7 @@ struct RockyRoad2013ROptions
     scale2::Float64 #Additive scaling coefficient
 end
 
-function rockyroad_2013R_options(;
+function options(version::V2013R{RockyRoadFlavour};
     N::Int = 60, #Number of years to calculate (from 2010 onwards)
     tstep::Int = 5, #Years per Period
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
@@ -116,10 +116,10 @@ function rockyroad_2013R_options(;
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.016408662, #Multiplicative scaling coefficient
     scale2::Float64 = -3855.106895) #Additive scaling coefficient
-    RockyRoad2013ROptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁₀,ξ₁β,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₂₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
+    RockyRoadOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁₀,ξ₁β,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₂₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoad2013ROptions)
+function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
     println(io, "Options for RockyRoad 2013R version");
     println(io, "Time step");
     println(io, "N: $(opt.N), tstep: $(opt.tstep)");
@@ -177,7 +177,7 @@ struct RockyRoad2013RParameters
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
-function generate_parameters(c::RockyRoad2013ROptions)
+function generate_parameters(c::RockyRoadOptions)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -276,10 +276,9 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoad2013RParameters)
 end
 
 struct RockyRoad2013R
-    constants::RockyRoad2013ROptions
+    constants::RockyRoadOptions
     parameters::RockyRoad2013RParameters
     model::JuMP.Model
-    scenario::Symbol
     μ::Array{JuMP.Variable,1} # Emission control rate GHGs
     FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
     Tₐₜ::Array{JuMP.Variable,1} # Increase temperature of atmosphere (degrees C from 1900)
@@ -313,10 +312,9 @@ struct RockyRoad2013R
     scc::Array{Float64,1} # Social Cost of Carbon
 end
 
-function rockyroad_2013R(;
-    config::RockyRoad2013ROptions = rockyroad_2013R_options(),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50),
-    scenario::Symbol = :BaseRun)
+function rockyroad_2013R(version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
 
     params = generate_parameters(config);
     model = Model(solver = solver);

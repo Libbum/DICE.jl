@@ -1,7 +1,6 @@
-struct Vanilla2013ROptions
+struct VanillaOptions <: Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
-    cpriceopt::Bool #If optimized set true if base set false
     α::Float64 #Elasticity of marginal utility of consumption
     ρ::Float64 #Initial rate of social time preference per year ρ
     γₑ::Float64 #Capital elasticity in production function
@@ -55,10 +54,9 @@ struct Vanilla2013ROptions
     scale2::Float64 #Additive scaling coefficient
 end
 
-function vanilla_2013R_options(;
+function options(version::V2013R{VanillaFlavour};
     N::Int = 60, #Number of years to calculate (from 2010 onwards)
     tstep::Int = 5, #Years per Period
-    cpriceopt::Bool = true, #If optimised set true if base set false
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
     ρ::Float64 = 0.015, #Initial rate of social time preference per year ρ
     γₑ::Float64 = 0.3, #Capital elasticity in production function
@@ -110,14 +108,13 @@ function vanilla_2013R_options(;
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.016408662, #Multiplicative scaling coefficient
     scale2::Float64 = -3855.106895) #Additive scaling coefficient
-    Vanilla2013ROptions(N,tstep,cpriceopt,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
+    VanillaOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::Vanilla2013ROptions)
+function Base.show(io::IO, ::MIME"text/plain", opt::VanillaOptions)
     println(io, "Options for Vanilla 2013R version");
     println(io, "Time step");
     println(io, "N: $(opt.N), tstep: $(opt.tstep)");
-    println(io, "Optimal control: $(opt.cpriceopt)");
     println(io, "Preferences");
     println(io, "α: $(opt.α), ρ: $(opt.ρ)");
     println(io, "Population and Technology");
@@ -171,7 +168,7 @@ struct Vanilla2013RParameters
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
-function generate_parameters(c::Vanilla2013ROptions)
+function generate_parameters(c::VanillaOptions)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -268,7 +265,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::Vanilla2013RParameters)
 end
 
 struct Vanilla2013R
-    constants::Vanilla2013ROptions
+    constants::VanillaOptions
     parameters::Vanilla2013RParameters
     model::JuMP.Model
     μ::Array{JuMP.Variable,1} # Emission control rate GHGs
@@ -302,8 +299,8 @@ struct Vanilla2013R
     cc::Array{JuMP.ConstraintRef,1} # Consumption equation
 end
 
-function vanilla_2013R(;
-    config::Vanilla2013ROptions = vanilla_2013R_options(),
+function vanilla_2013R(version::V2013R{VanillaFlavour};
+    config::VanillaOptions = options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
 
     params = generate_parameters(config);
@@ -351,7 +348,7 @@ function vanilla_2013R(;
     # If so, reduce tnopol so that we don't run out of resources.
     setupperbound(CPRICE[1], params.cpricebase[1]);
     for i in 2:N
-        if !config.cpriceopt
+        if scenario <: BasePriceScenario
             setupperbound(CPRICE[i], params.cpricebase[i]);
         elseif i > config.tnopol
             setupperbound(CPRICE[i], 1000.0);
