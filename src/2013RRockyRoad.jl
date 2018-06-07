@@ -1,5 +1,3 @@
-include("2013RScenarios.jl")
-
 struct RockyRoad2013ROptions
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
@@ -121,7 +119,7 @@ function rockyroad_2013R_options(;
     RockyRoad2013ROptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁₀,ξ₁β,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₂₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
 end
 
-function Base.show(io::IO, opt::RockyRoad2013ROptions)
+function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoad2013ROptions)
     println(io, "Options for RockyRoad 2013R version");
     println(io, "Time step");
     println(io, "N: $(opt.N), tstep: $(opt.tstep)");
@@ -152,7 +150,7 @@ function Base.show(io::IO, opt::RockyRoad2013ROptions)
     println(io, "Fossil Fuel Availability");
     println(io, "fosslim: $(opt.fosslim)");
     println(io, "Scaling Parameters");
-    println(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
+    print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
 struct RockyRoad2013RParameters
@@ -255,7 +253,7 @@ function generate_parameters(c::RockyRoad2013ROptions)
     RockyRoad2013RParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
 end
 
-function Base.show(io::IO, opt::RockyRoad2013RParameters)
+function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoad2013RParameters)
     println(io, "Calculated Parameters for RockyRoad 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
     println(io, "Carbon cycle transition matrix coefficients");
@@ -274,7 +272,7 @@ function Base.show(io::IO, opt::RockyRoad2013RParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    println(io, "Fraction of emissions in control regieme: $(opt.partfract)");
+    print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
 end
 
 struct RockyRoad2013R
