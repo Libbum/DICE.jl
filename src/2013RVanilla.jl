@@ -54,7 +54,7 @@ struct VanillaOptions <: Options
     scale2::Float64 #Additive scaling coefficient
 end
 
-function options(version::V2013R{VanillaFlavour};
+function dice_options(version::V2013R{VanillaFlavour};
     N::Int = 60, #Number of years to calculate (from 2010 onwards)
     tstep::Int = 5, #Years per Period
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
@@ -145,7 +145,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::VanillaOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-struct Vanilla2013RParameters
+struct VanillaParameters <: Parameters
     optlrsav::Float64 # Optimal savings rate
     ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
@@ -240,10 +240,10 @@ function generate_parameters(c::VanillaOptions)
                        end;
     end
     partfract[1] = c.partfract2010;
-    Vanilla2013RParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
+    VanillaParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::Vanilla2013RParameters)
+function Base.show(io::IO, ::MIME"text/plain", opt::VanillaParameters)
     println(io, "Calculated Parameters for Vanilla 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
     println(io, "Carbon cycle transition matrix coefficients");
@@ -264,163 +264,123 @@ function Base.show(io::IO, ::MIME"text/plain", opt::Vanilla2013RParameters)
     print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
 end
 
-struct Vanilla2013R
-    constants::VanillaOptions
-    parameters::Vanilla2013RParameters
-    model::JuMP.Model
-    μ::Array{JuMP.Variable,1} # Emission control rate GHGs
-    FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
-    Tₐₜ::Array{JuMP.Variable,1} # Increase temperature of atmosphere (degrees C from 1900)
-    Tₗₒ::Array{JuMP.Variable,1} # Increase temperatureof lower oceans (degrees C from 1900)
-    Mₐₜ::Array{JuMP.Variable,1} # Carbon concentration increase in atmosphere (GtC from 1750)
-    Mᵤₚ::Array{JuMP.Variable,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
-    Mₗₒ::Array{JuMP.Variable,1} # Carbon concentration increase in lower oceans (GtC from 1750)
-    E::Array{JuMP.Variable,1} # Total CO2 emissions (GtCO2 per year)
-    Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
-    C::Array{JuMP.Variable,1} # Consumption (trillions 2005 US dollars per year)
-    K::Array{JuMP.Variable,1} # Capital stock (trillions 2005 US dollars)
-    CPC::Array{JuMP.Variable,1} #  Per capita consumption (thousands 2005 USD per year)
-    I::Array{JuMP.Variable,1} # Investment (trillions 2005 USD per year)
-    S::Array{JuMP.Variable,1} # Gross savings rate as fraction of gross world product
-    RI::Array{JuMP.Variable,1} # Real interest rate (per annum)
-    Y::Array{JuMP.Variable,1} # Gross world product net of abatement and damages (trillions 2005 USD per year)
-    YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
-    YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2005 USD per year)
-    DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2005 USD per year)
-    Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
-    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2005 USD per year)
-    MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2005$ per ton CO2)
-    CCA::Array{JuMP.Variable,1} # Cumulative industrial carbon emissions (GTC)
-    PERIODU::Array{JuMP.Variable,1} # One period utility function
-    CPRICE::Array{JuMP.Variable,1} # Carbon price (2005$ per ton of CO2)
-    CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
-    UTILITY::JuMP.Variable # Welfare function
+struct VanillaEquations <: Equations
     eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
     cc::Array{JuMP.ConstraintRef,1} # Consumption equation
 end
 
-function vanilla_2013R(version::V2013R{VanillaFlavour};
-    config::VanillaOptions = options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
-
-    params = generate_parameters(config);
-    model = Model(solver = solver);
-
+function model_eqs(version::V2013R{VanillaFlavour}, model::JuMP.Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
     N = config.N;
-    # Rate limit
-    μ_ubound(t) = if t < 30
-                        1.0
-                    else
-                        config.limμ*params.partfract[t]
-                    end;
-
-    # Variables #
-    @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound(i)); # Emission control rate GHGs
-    @variable(model, FORC[1:N]); # Increase in radiative forcing (watts per m2 from 1900)
-    @variable(model, 0.0 <= Tₐₜ[1:N] <= 40.0); # Increase temperature of atmosphere (degrees C from 1900)
-    @variable(model, -1.0 <= Tₗₒ[1:N] <= 20.0); # Increase temperatureof lower oceans (degrees C from 1900)
-    @variable(model, Mₐₜ[1:N] >= 10.0); # Carbon concentration increase in atmosphere (GtC from 1750)
-    @variable(model, Mᵤₚ[1:N] >= 100.0); # Carbon concentration increase in shallow oceans (GtC from 1750)
-    @variable(model, Mₗₒ[1:N] >= 1000.0); # Carbon concentration increase in lower oceans (GtC from 1750)
-    @variable(model, E[1:N]); # Total CO2 emissions (GtCO2 per year)
-    @variable(model, Eind[1:N]); # Industrial emissions (GtCO2 per year)
-    @variable(model, C[1:N] >= 2.0); # Consumption (trillions 2005 US dollars per year)
-    @variable(model, K[1:N] >= 1.0); # Capital stock (trillions 2005 US dollars)
-    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2005 USD per year)
-    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2005 USD per year)
-    @variable(model, S[1:N]); # Gross savings rate as fraction of gross world product
-    @variable(model, RI[1:N]); # Real interest rate (per annum)
-    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2005 USD per year)
-    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
-    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2005 USD per year)
-    @variable(model, DAMAGES[1:N]); # Damages (trillions 2005 USD per year)
-    @variable(model, Ω[1:N]); # Damages as fraction of gross output
-    @variable(model, Λ[1:N]); # Cost of emissions reductions  (trillions 2005 USD per year)
-    @variable(model, MCABATE[1:N]); # Marginal cost of abatement (2005$ per ton CO2)
-    @variable(model, CCA[1:N] <= config.fosslim); # Cumulative industrial carbon emissions (GTC)
-    @variable(model, PERIODU[1:N]); # One period utility function
-    @variable(model, CPRICE[i=1:N]); # Carbon price (2005$ per ton of CO2)
-    @variable(model, CEMUTOTPER[1:N]); # Period utility
-    @variable(model, UTILITY); # Welfare function
-
-    # Base carbon price if base, otherwise optimized
-    # Warning: If parameters are changed, the next equation might make base case infeasible.
-    # If so, reduce tnopol so that we don't run out of resources.
-    setupperbound(CPRICE[1], params.cpricebase[1]);
-    for i in 2:N
-        if scenario <: BasePriceScenario
-            setupperbound(CPRICE[i], params.cpricebase[i]);
-        elseif i > config.tnopol
-            setupperbound(CPRICE[i], 1000.0);
-        end
-    end
-
     # Equations #
     # Emissions Equation
-    eeq = @constraint(model, [i=1:N], E[i] == Eind[i] + params.Etree[i]);
+    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
     # Industrial Emissions
-    @constraint(model, [i=1:N], Eind[i] == params.σ[i] * YGROSS[i] * (1-μ[i]));
+    @constraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
     # Radiative forcing equation
-    @NLconstraint(model, [i=1:N], FORC[i] == config.η * (log(Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
+    @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
     # Equation for damage fraction
-    @NLconstraint(model, [i=1:N], Ω[i] == config.ψ₁*Tₐₜ[i]+config.ψ₂*Tₐₜ[i]^config.ψ₃);
+    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
-    @constraint(model, [i=1:N], DAMAGES[i] == YGROSS[i]*Ω[i]);
+    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
-    @NLconstraint(model, [i=1:N], Λ[i] == YGROSS[i] * params.θ₁[i] * μ[i]^config.θ₂ * params.partfract[i]^(1-config.θ₂));
+    @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂ * params.partfract[i]^(1-config.θ₂));
     # Equation for MC abatement
-    @NLconstraint(model, [i=1:N], MCABATE[i] == params.pbacktime[i] * μ[i]^(config.θ₂-1));
+    @NLconstraint(model, [i=1:N], vars.MCABATE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
     # Carbon price equation from abatement
-    @NLconstraint(model, [i=1:N], CPRICE[i] == params.pbacktime[i] * (μ[i]/params.partfract[i])^(config.θ₂-1));
+    @NLconstraint(model, [i=1:N], vars.CPRICE[i] == params.pbacktime[i] * (vars.μ[i]/params.partfract[i])^(config.θ₂-1));
     # Output gross equation
-    @NLconstraint(model, [i=1:N], YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*K[i]^config.γₑ);
+    @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
-    @constraint(model, [i=1:N], YNET[i] == YGROSS[i]*(1-Ω[i]));
+    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
     # Output net equation
-    @constraint(model, [i=1:N], Y[i] == YNET[i] - Λ[i]);
+    @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
     # Consumption equation
-    cc = @constraint(model, [i=1:N], C[i] == Y[i] - I[i]);
+    cc = @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], CPC[i] == 1000.0 * C[i] / params.L[i]);
+    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Savings rate equation
-    @constraint(model, [i=1:N], I[i] == S[i] * Y[i]);
+    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
-    @constraint(model, [i=1:N], CEMUTOTPER[i] == PERIODU[i] * params.L[i] * params.rr[i]);
+    @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
-    @NLconstraint(model, [i=1:N], PERIODU[i] == ((C[i]*1000.0/params.L[i])^(1-config.α)-1)/(1-config.α)-1);
+    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-config.α)-1)/(1-config.α)-1);
 
     # Equations (offset) #
     # Cumulative carbon emissions
-    @constraint(model, [i=1:N-1], CCA[i+1] == CCA[i] + Eind[i]*5/3.666);
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*5/3.666);
     # Atmospheric concentration equation
-    @constraint(model, [i=1:N-1], Mₐₜ[i+1] == Mₐₜ[i]*params.ϕ₁₁ + Mᵤₚ[i]*params.ϕ₂₁ + E[i]*(5/3.666));
+    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
     # Lower ocean concentration
-    @constraint(model, [i=1:N-1], Mₗₒ[i+1] == Mₗₒ[i]*params.ϕ₃₃ + Mᵤₚ[i]*config.ϕ₂₃);
+    @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
     # Shallow ocean concentration
-    @constraint(model, [i=1:N-1], Mᵤₚ[i+1] == Mₐₜ[i]*config.ϕ₁₂ + Mᵤₚ[i]*params.ϕ₂₂ + Mₗₒ[i]*params.ϕ₃₂);
+    @constraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
     # Temperature-climate equation for atmosphere
-    @constraint(model, [i=1:N-1], Tₐₜ[i+1] == Tₐₜ[i] + config.ξ₁*((FORC[i+1]-params.λ*Tₐₜ[i])-(config.ξ₃*(Tₐₜ[i]-Tₗₒ[i]))));
+    @constraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + config.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
     # Temperature-climate equation for lower oceans
-    @constraint(model, [i=1:N-1], Tₗₒ[i+1] == Tₗₒ[i] + config.ξ₄*(Tₐₜ[i]-Tₗₒ[i]));
+    @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
-    @constraint(model, [i=1:N-1], K[i+1] <= (1-config.δk)^config.tstep * K[i] + config.tstep*I[i]);
+    @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
-    @NLconstraint(model, [i=1:N-1], RI[i] == (1+config.ρ)*(CPC[i+1]/CPC[i])^(config.α/config.tstep)-1);
+    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    @constraint(model, S[i=51:N] .== params.optlrsav);
+    @constraint(model, vars.S[i=51:N] .== params.optlrsav);
     # Initial conditions
-    @constraint(model, CCA[1] == 90.0);
-    @constraint(model, K[1] == config.k₀);
-    @constraint(model, Mₐₜ[1] == config.mat₀);
-    @constraint(model, Mᵤₚ[1] == config.mu₀);
-    @constraint(model, Mₗₒ[1] == config.ml₀);
-    @constraint(model, Tₐₜ[1] == config.tatm₀);
-    @constraint(model, Tₗₒ[1] == config.tocean₀);
+    @constraint(model, vars.CCA[1] == 90.0);
+    @constraint(model, vars.K[1] == config.k₀);
+    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
+    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
+    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
 
-    @constraint(model, UTILITY == config.tstep * config.scale1 * sum(CEMUTOTPER[i] for i=1:N) + config.scale2);
+    @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
     # Objective function
-    @objective(model, Max, UTILITY);
-    Vanilla2013R(config,params,model,μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,PERIODU,CPRICE,CEMUTOTPER,UTILITY,eeq,cc)
+    @objective(model, Max, vars.UTILITY);
+    VanillaEquations(eeq,cc)
+end
+
+struct VanillaResults <: Results
+    scc::Array{Float64,1}
+end
+
+function model_results(eqs::Equations)
+    scc = -1000.*getdual(eqs.eeq)./getdual(eqs.cc);
+    VanillaResults(scc)
+end
+
+function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour};
+    config::VanillaOptions = dice_options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, params.cpricebase);
+
+    equations = model_eqs(version, model, config, params, variables);
+
+    solve(model);
+    solve(model);
+    solve(model);
+    
+    results = model_results(equations);
+    # Base carbon price if base, otherwise optimized
+    # Warning: If parameters are changed, the next equation might make base case infeasible.
+    # If so, reduce tnopol so that we don't run out of resources.
+    #setupperbound(CPRICE[1], params.cpricebase[1]);
+    #for i in 2:N
+        #if scenario <: BasePriceScenario
+    #        setupperbound(CPRICE[i], params.cpricebase[i]);
+        #elseif i > config.tnopol
+        #    setupperbound(CPRICE[i], 1000.0);
+        #end
+    #end
+
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
