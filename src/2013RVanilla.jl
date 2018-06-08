@@ -367,20 +367,42 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour}
     solve(model);
     solve(model);
     solve(model);
-    
+
     results = model_results(equations);
-    # Base carbon price if base, otherwise optimized
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+
+function dice_solve(scenario::OptimalPriceScenario, version::V2013R{VanillaFlavour};
+    config::VanillaOptions = dice_options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+
+    cprice_ubound = fill(Inf, config.N);
+    cprice_ubound[1] = params.cpricebase[1];
     # Warning: If parameters are changed, the next equation might make base case infeasible.
     # If so, reduce tnopol so that we don't run out of resources.
-    #setupperbound(CPRICE[1], params.cpricebase[1]);
-    #for i in 2:N
-        #if scenario <: BasePriceScenario
-    #        setupperbound(CPRICE[i], params.cpricebase[i]);
-        #elseif i > config.tnopol
-        #    setupperbound(CPRICE[i], 1000.0);
-        #end
-    #end
+    for i in 2:config.N
+        if i > config.tnopol
+            cprice_ubound[i] = 1000.0;
+        end
+    end
 
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    equations = model_eqs(version, model, config, params, variables);
+
+    solve(model);
+    solve(model);
+    solve(model);
+
+    results = model_results(equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end

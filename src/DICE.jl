@@ -37,12 +37,6 @@ function Base.show(io::IO, ::MIME"text/plain", model::DICENarrative)
     show(io, model.model)
 end
 
-#solve(BasePrice, v2013R(RockyRoad)) for example
-# Don't alias version (ie keep it as v2016R()) so as not to confuse
-# v2013R (generic function with 2 methods)
-#function solve(s::Scenario, v::Version)
-    #println("Solving $(s) scenario using $(v)...")
-#end
 function dice_solve end
 function dice_options end
 
@@ -50,6 +44,5 @@ export dice_solve, dice_options
 
 include("2013R.jl")
 include("2016R.jl")
-
 
 end
