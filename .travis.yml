@@ -18,8 +18,8 @@ cache:
     - $HOME/.julia/v0.6/JuMP
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - if [[ ! -a "$HOME/.julia/v0.6/JuMP" ]]; julia -e 'Pkg.add("JuMP");'; fi
-  - if [[ ! -a "$HOME/.julia/v0.6/Ipopt" ]]; julia -e 'Pkg.add("Ipopt"); Pkg.build("Ipopt");'; fi
+  - if [[ ! -a "$HOME/.julia/v0.6/JuMP" ]]; then julia -e 'Pkg.add("JuMP");'; fi
+  - if [[ ! -a "$HOME/.julia/v0.6/Ipopt" ]]; then julia -e 'Pkg.add("Ipopt"); Pkg.build("Ipopt");'; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.update(); Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
   - julia -e 'Pkg.add("Documenter")'
