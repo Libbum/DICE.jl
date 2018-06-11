@@ -6,7 +6,6 @@ else
     using Test
 end
 
-dice = vanilla_2013R();
-solve(dice.model)
+dice = dice_solve(OptimalPrice, v2013R());
 
-@test getvalue(dice.UTILITY) == 2690.2447324365826
+@test getvalue(dice.variables.UTILITY) == 2690.244712873159
