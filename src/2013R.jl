@@ -17,6 +17,28 @@ end
 
 Base.show(io::IO, v::V2013R) = print(io, "v2013R ($(v.flavour))")
 
+"""
+    v2013R([flavour])
+
+Identifier for the 2013R version of the model.
+Defaults to the `Vanilla` flavour, but also accepts `RockyRoad`.
+
+# Examples
+```jldoctest
+julia> v2013R()
+v2013R (Vanilla flavour)
+```
+
+```jldoctest
+julia> v2013R(Vanilla)
+v2013R (Vanilla flavour)
+```
+
+```jldoctest
+julia> v2013R(RockyRoad)
+v2013R (Rocky Road flavour)
+```
+"""
 function v2013R(flavour::F = VanillaFlavour()) where {F<:Flavour}
     V2013R{F}(flavour)
 end
