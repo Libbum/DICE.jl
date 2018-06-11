@@ -1,4 +1,4 @@
-struct VanillaOptions <: Options
+immutable VanillaOptions <: Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
@@ -145,7 +145,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::VanillaOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-struct VanillaParameters <: Parameters
+immutable VanillaParameters <: Parameters
     optlrsav::Float64 # Optimal savings rate
     ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient

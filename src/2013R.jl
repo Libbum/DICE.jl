@@ -1,7 +1,7 @@
 # Flavours
 abstract type Flavour end
-struct VanillaFlavour <: Flavour end
-struct RockyRoadFlavour <: Flavour end
+immutable VanillaFlavour <: Flavour end
+immutable RockyRoadFlavour <: Flavour end
 
 Base.show(io::IO, f::VanillaFlavour) = print(io, "Vanilla flavour")
 Base.show(io::IO, f::RockyRoadFlavour) = print(io, "Rocky Road flavour")
@@ -11,7 +11,7 @@ RockyRoad = RockyRoadFlavour()
 
 export Vanilla, RockyRoad
 
-struct V2013R{F<:Flavour} <: Version
+immutable V2013R{F<:Flavour} <: Version
     flavour::F
 end
 

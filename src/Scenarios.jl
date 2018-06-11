@@ -1,9 +1,9 @@
-struct BasePriceScenario <: Scenario end
-struct OptimalPriceScenario <: Scenario end
-struct L2Scenario <: Scenario end
-struct SternScenario <: Scenario end
-struct SternCalibratedScenario <: Scenario end
-struct CopenhagenScenario <: Scenario end
+immutable BasePriceScenario <: Scenario end
+immutable OptimalPriceScenario <: Scenario end
+immutable L2Scenario <: Scenario end
+immutable SternScenario <: Scenario end
+immutable SternCalibratedScenario <: Scenario end
+immutable CopenhagenScenario <: Scenario end
 
 BasePrice = BasePriceScenario()
 OptimalPrice = OptimalPriceScenario()
