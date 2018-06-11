@@ -18,7 +18,7 @@ cache:
     - $HOME/.julia/v0.6/JuMP
 script:
   - [[ -a .git/shallow ]] && git fetch --unshallow
-  - [[ -a $HOME/.julia/v0.6/Ipopt ]] && julia -e "Pkg.update()" || julia -e 'Pkg.add("JuMP"); Pkg.add("Ipopt"); Pkg.build("Ipopt");'
+  - [[ -a $HOME/.julia/v0.6/Ipopt ]] && julia -e 'Pkg.update()' || julia -e 'Pkg.add("JuMP"); Pkg.add("Ipopt"); Pkg.build("Ipopt");'
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
   - julia -e 'Pkg.add("Documenter")'
