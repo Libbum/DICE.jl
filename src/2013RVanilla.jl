@@ -345,7 +345,7 @@ struct VanillaResults <: Results
     scc::Array{Float64,1}
 end
 
-function model_results(eqs::Equations)
+function model_results(version::V2013R{VanillaFlavour}, eqs::Equations)
     scc = -1000.*getdual(eqs.eeq)./getdual(eqs.cc);
     VanillaResults(scc)
 end
@@ -368,7 +368,7 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour}
     solve(model);
     solve(model);
 
-    results = model_results(equations);
+    results = model_results(version, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
