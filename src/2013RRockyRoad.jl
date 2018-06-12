@@ -120,7 +120,7 @@ function dice_options(version::V2013R{RockyRoadFlavour};
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
-    println(io, "Options for RockyRoad 2013R version");
+    println(io, "Options for Rocky Road 2013R version");
     println(io, "Time step");
     println(io, "N: $(opt.N), tstep: $(opt.tstep)");
     println(io, "Preferences");
@@ -254,7 +254,7 @@ function generate_parameters(c::RockyRoadOptions)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
-    println(io, "Calculated Parameters for RockyRoad 2013R");
+    println(io, "Calculated Parameters for Rocky Road 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
     println(io, "Carbon cycle transition matrix coefficients");
     println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
