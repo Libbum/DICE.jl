@@ -6,6 +6,9 @@ else
     using Test
 end
 
-dice = dice_solve(OptimalPrice, v2013R());
+#Vanilla utility
+baserun = dice_solve(BasePrice, v2013R());
+optimalrun = dice_solve(OptimalPrice, v2013R());
 
-@test getvalue(dice.variables.UTILITY) == 2690.244712873159
+@test getvalue(baserun.variables.UTILITY) == 2670.2779245830334
+@test getvalue(optimalrun.variables.UTILITY) == 2690.244712873159
