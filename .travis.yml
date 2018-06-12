@@ -14,13 +14,14 @@ addons:
         - gfortran
 cache:
   directories:
-    - $HOME/.julia/v0.6/Ipopt
-    - $HOME/.julia/v0.6/JuMP
+    - /home/travis/.julia/v0.6/Ipopt
+    - /home/travis/.julia/v0.6/JuMP
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - if [[ ! -a "$HOME/.julia/v0.6/JuMP" ]]; then julia -e 'Pkg.add("JuMP");'; fi
-  - if [[ ! -a "$HOME/.julia/v0.6/Ipopt" ]]; then julia -e 'Pkg.add("Ipopt"); Pkg.build("Ipopt");'; fi
-  - julia --check-bounds=yes --depwarn=no -e 'Pkg.update(); Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
+  - julia -e 'Pkg.add("JuMP");'
+  - julia -e 'Pkg.add("Ipopt"); Pkg.build("Ipopt");'
+  - julia -e 'Pkg.update();'
+  - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
   - julia -e 'Pkg.add("Documenter")'
   - julia -e 'cd(Pkg.dir("DICE")); include(joinpath("docs", "make.jl"))'
