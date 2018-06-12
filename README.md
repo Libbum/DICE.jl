@@ -1,4 +1,15 @@
-# DICE.jl
+<h1 align="center">DICE.jl</h1>
+
+<div align="center">
+    <a href="https://travis-ci.org/Libbum/DICE.jl">
+        <img src="https://travis-ci.org/Libbum/DICE.jl.svg?branch=master" alt="Travis-ci" />
+    </a>
+    │
+    <a href="https://codecov.io/gh/Libbum/DICE.jl">
+        <img src="https://codecov.io/gh/Libbum/DICE.jl/branch/master/graph/badge.svg" alt="Codecov" />
+    </a>
+</div>
+<br />
 
 The [Dynamic Integrated model of Climate and the Economy](https://sites.google.com/site/williamdnordhaus/dice-rice) (DICE) model family are a popular and capable type of simple Integrated Assessment Model (IAM) of climate-change economics pioneered by William Nordhaus: the Sterling Professor of Economics at Yale University.
 
@@ -13,17 +24,18 @@ For now, the Vanilla 2013R version is the only one residing here, more are on th
 
 Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP.jl) and a NLP solver.
 We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
-Detailed instructions of setting these dependencies up on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
+If you don't have these packages on your system, they will be installed when you add this package.
+Detailed instructions of setting up other solvers on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
 
 ### Notebooks
 
-Self contained notebooks can be found in the [notebooks](/notebooks) directory that run default instances of each model, plot the major results and compare the output with original source data (where available).
+Self contained notebooks can be found in a separate [DICE.jl-notebooks](https://github.com/Libbum/DICE.jl-notebooks) repository that run default instances of each model, plot the major results and compare the output with original source data (where available).
 
 The best way to use these is to run a notebook server from a cloned copy of this repository:
 
 ```shell
-$ git clone git@github.com:Libbum/DICE.jl.git
-$ cd DICE.jl/notebooks
+$ git clone git@github.com:Libbum/DICE.jl-notebooks.git
+$ cd DICE.jl-notebooks
 $ jupyter notebook
 ```
 
@@ -42,12 +54,10 @@ Pkg.clone("git://github.com/Libbum/DICE.jl.git")
 The simplest of files to run the default solution looks like this:
 
 ```julia
-using JuMP;
 using DICE;
 
-dice = vanilla_2013R();
-solve(dice.model);
-getvalue(dice.UTILITY)
+dice = dice_solve(OptimalPrice, v2013R());
+getvalue(dice.variables.UTILITY)
 ```
 
 A more fleshed out example, enabling you to alter the configuration is also simple enough:
@@ -59,23 +69,13 @@ using DICE;
 using Plots;
 unicodeplots()
 
-conf = vanilla_2013R_options(cpriceopt = false); #Using base carbon price
+version = v2013R(); #Vanilla flavour
+conf = dice_options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
 ipopt = IpoptSolver(print_level=0)); #Don't print output when optimising solution
-dice = vanilla_2013R(config = conf, solver = ipopt);
-
-# Solve multiple times using previous endpoings as starting solution
-status1 = solve(dice.model);
-status2 = solve(dice.model);
-status3 = solve(dice.model);
-
-tatm = getvalue(dice.Tₐₜ); # Atmospheric Temperature (deg C above preindustrial)
-forc = getvalue(dice.FORC); # Total Increase in Forcing (Watts per Meter2, preindustrial)
-tocean = getvalue(dice.Tₗₒ); # Lower Ocean Temperature (deg C above preindustrial)
-# Calculate social cost of carbon
-scc = -1000.0.*getdual(dice.eeq)./getdual(dice.cc);
+dice = dice_solve(BasePrice, version, config = conf, solver = ipopt);
 
 years = 2005+(dice.constants.tstep*(1:dice.constants.N)); # Set up a valid time axis
-plot(years,scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
+plot(years,dice.results.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
 ```
 
 yielding the estimated global cost of carbon emissions out to 2300 without an optimal carbon price
