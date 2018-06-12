@@ -18,10 +18,7 @@ cache:
     - /home/travis/.julia/v0.6/JuMP
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.add("JuMP");'
-  - julia -e 'Pkg.add("Ipopt"); Pkg.build("Ipopt");'
-  - julia -e 'Pkg.update();'
-  - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
+  - julia --check-bounds=yes --depwarn=no -e 'Pkg.add("JuMP"); Pkg.add("Ipopt"); Pkg.build("Ipopt"); Pkg.update(); Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
   - julia -e 'Pkg.add("Documenter")'
   - julia -e 'cd(Pkg.dir("DICE")); include(joinpath("docs", "make.jl"))'
