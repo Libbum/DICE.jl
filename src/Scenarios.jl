@@ -19,4 +19,4 @@ Base.show(io::IO, s::SternScenario) = print(io, "Stern")
 Base.show(io::IO, s::SternCalibratedScenario) = print(io, "Calibrated Stern")
 Base.show(io::IO, s::CopenhagenScenario) = print(io, "Copenhagen participation")
 
-export BasePrice, OptimalPrice, L2, Stern, SternCalibrated, Copenhagen
+export BasePrice, OptimalPrice, Limit2Degrees, Stern, SternCalibrated, Copenhagen
