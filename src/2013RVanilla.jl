@@ -402,7 +402,7 @@ function dice_solve(scenario::OptimalPriceScenario, version::V2013R{VanillaFlavo
     solve(model);
     solve(model);
 
-    results = model_results(equations);
+    results = model_results(version, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
