@@ -12,10 +12,6 @@ notifications:
 addons:
     apt_packages:
         - gfortran
-cache:
-  directories:
-    - /home/travis/.julia/v0.6/Ipopt
-    - /home/travis/.julia/v0.6/JuMP
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.add("JuMP"); Pkg.add("Ipopt"); Pkg.build("Ipopt"); Pkg.update(); Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
