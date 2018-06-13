@@ -352,7 +352,7 @@ end
 
 function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = dice_options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     params = generate_parameters(config);
 
@@ -376,7 +376,7 @@ end
 
 function dice_solve(scenario::OptimalPriceScenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = dice_options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     params = generate_parameters(config);
 

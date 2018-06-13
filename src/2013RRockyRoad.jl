@@ -177,7 +177,8 @@ immutable RockyRoadParameters <: Parameters
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
-function generate_parameters(c::RockyRoadOptions)
+function generate_parameters(c::RockyRoadOptions;
+                            participation::Array{Float64,1} = [1.0])
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -198,6 +199,8 @@ function generate_parameters(c::RockyRoadOptions)
     rr = Array{Float64}(c.N);
     # Carbon price in base case
     cpricebase = Array{Float64}(c.N);
+    # Exogenous forcing for other greenhouse gases
+    fₑₓ = Array{Float64}(c.N);
 
     for i in 1:c.N
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
@@ -205,6 +208,11 @@ function generate_parameters(c::RockyRoadOptions)
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
         rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
+        fₑₓ[i] = if i < 19
+                         c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
+                     else
+                         c.fₑₓ1-c.fₑₓ0
+                     end;
     end
 
     # Initial conditions and offset required
@@ -229,27 +237,27 @@ function generate_parameters(c::RockyRoadOptions)
         σ[i+1] = σ[i]*exp.(gσ[i]*c.tstep);
     end
 
-    # Adjusted cost for backstop
+    # Adjusted cost for backstop (Needs σ, hence a separate loop)
     θ₁ = Array{Float64}(c.N);
-    # Exogenous forcing for other greenhouse gases
-    fₑₓ = Array{Float64}(c.N);
-    # Fraction of emissions in control regime
-    partfract = Array{Float64}(c.N);
-
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
-        fₑₓ[i] = if i < 19
-                         c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
-                     else
-                         c.fₑₓ1-c.fₑₓ0
-                     end;
-        partfract[i] = if i <= c.periodfullpart
-                            c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
-                       else
-                            c.partfractfull
-                       end;
     end
-    partfract[1] = c.partfract2010;
+
+    # Fraction of emissions in control regime
+    if length(participation) == 1 #TODO: This is a bit of a hack. Would be nice to check this in a better way.
+        partfract = Array{Float64}(c.N);
+
+        for i in 1:c.N
+            partfract[i] = if i <= c.periodfullpart
+                                c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
+                           else
+                                c.partfractfull
+                           end;
+        end
+        partfract[1] = c.partfract2010;
+    else
+        partfract = participation;
+    end
     RockyRoadParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
 end
 
@@ -280,7 +288,7 @@ struct RockyRoadEquations <: Equations
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 
-function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables, ψ₂::JuMP.NonlinearParameter)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     N = config.N;
     # Equations #
@@ -291,7 +299,7 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
     # Equation for damage fraction
-    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
     @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
@@ -365,7 +373,7 @@ end
 
 function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50))
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     params = generate_parameters(config);
 
@@ -376,10 +384,10 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavou
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(version, model, config, params, variables);
+    @NLparameter(model, ψ₂ == config.ψ₂);
 
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
 
-    #TODO: ψ₂ can be modified and reset. We ignore this for the moment.
     solve(model);
     photel = getvalue(variables.CPRICE);
 
@@ -388,16 +396,169 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavou
             setupperbound(variables.CPRICE[i], max(photel[i],params.cpricebase[i]));
         end
     end
+
+    setvalue(ψ₂, config.ψ₂₀);
+
     solve(model);
     solve(model);
     results = model_results(version, equations);
 
-#    if scenario == :OptRun
-        #setupperbound(μ[1], config.μ₀);
-        #solve(model);
-        #solve(model);
-        #scc = -1000.0.*getdual(eeq)./getdual(yy);
-    #end
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+#TODO: Doesn't seem to actually be optimal...
+function dice_solve(scenario::OptimalPriceScenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = dice_options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    @NLparameter(model, ψ₂ == config.ψ₂);
+
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    setupperbound(variables.μ[1], config.μ₀);
+
+    solve(model);
+    solve(model);
+
+    results = model_results(version, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+#TODO: Currently infeasable
+function dice_solve(scenario::Limit2DegreesScenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = dice_options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    @NLparameter(model, ψ₂ == config.ψ₂);
+
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
+    for i in 1:config.N
+        setupperbound(variables.Tₐₜ[i], 2.0);
+    end
+
+    solve(model);
+    solve(model);
+
+    results = model_results(version, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+#TODO: This wont give the correct α and ρ values if the user overrides the options.
+function dice_solve(scenario::SternScenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = dice_options(version, α = 1.01, ρ = 0.001),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    @NLparameter(model, ψ₂ == config.ψ₂);
+
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    solve(model);
+    solve(model);
+
+    results = model_results(version, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+#TODO: This wont give the correct α and ρ values if the user overrides the options.
+#TODO: This is currently infeasable
+function dice_solve(scenario::SternCalibratedScenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = dice_options(version, α = 2.1, ρ = 0.001),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    params = generate_parameters(config);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    @NLparameter(model, ψ₂ == config.ψ₂);
+
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    for i in 1:config.N
+        setlowerbound(variables.μ[i], 0.01);
+    end
+    @constraint(model, variables.μ[1] == 0.038976);
+    @constraint(model, variables.Tₐₜ[1] == 0.83);
+
+    solve(model);
+    solve(model);
+    solve(model);
+
+    results = model_results(version, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+end
+
+#NOTE: This is uncallibrated in the 2013R base code, so it's not here either.
+#TODO: Currently infeasable
+function dice_solve(scenario::CopenhagenScenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = dice_options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    #The Copenhagen participation fraction.
+    imported_partfrac = ones(config.N);
+    imported_partfrac[1:19] = [0.2,0.390423082,0.379051794,0.434731269,0.42272216,0.410416777,0.707776548,0.692148237,0.840306905,0.834064356,0.939658852,0.936731085,0.933881267,0.930944201,0.928088049,0.925153812,0.922301007,0.919378497,1.0];
+
+    params = generate_parameters(config, participation = imported_partfrac);
+
+    model = Model(solver = solver);
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    @NLparameter(model, ψ₂ == config.ψ₂);
+
+    equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    # The Emissions Control Rate Imported
+    imported_μ = fill(0.9, config.N);
+    imported_μ[1:27] = [0.02,0.055874801,0.110937151,0.163189757,0.206247482,0.241939219,0.30180914,0.364484979,0.423670192,0.478283881,0.534073643,0.588156847,0.633622,0.672457,0.705173102,0.733018573,0.756457118,0.776297581,0.794110815,0.822197128,0.839125811,0.854453754,0.868106413,0.880485825,0.891631752,0.901741794,0.9];
+
+    @constraint(model, [i=1:config.N], variables.μ[i] == imported_μ[i]);
+    setlowerbound(variables.μ[1], 0.0);
+    setupperbound(variables.μ[1], 1.5);
+
+    solve(model);
+    solve(model);
+    solve(model);
+
+    results = model_results(version, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
