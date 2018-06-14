@@ -363,15 +363,6 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     RockyRoadEquations(eeq,yy)
 end
 
-struct RockyRoadResults <: Results
-    scc::Array{Float64,1}
-end
-
-function model_results(version::V2013R{RockyRoadFlavour}, eqs::Equations)
-    scc = -1000.*getdual(eqs.eeq)./getdual(eqs.yy);
-    RockyRoadResults(scc)
-end
-
 function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
@@ -402,7 +393,7 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavou
 
     solve(model);
     solve(model);
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -434,7 +425,7 @@ function dice_solve(scenario::OptimalPriceScenario, version::V2013R{RockyRoadFla
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -469,7 +460,7 @@ function dice_solve(scenario::Limit2DegreesScenario, version::V2013R{RockyRoadFl
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -500,7 +491,7 @@ function dice_solve(scenario::SternScenario, version::V2013R{RockyRoadFlavour};
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -534,7 +525,7 @@ function dice_solve(scenario::SternCalibratedScenario, version::V2013R{RockyRoad
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -578,7 +569,7 @@ function dice_solve(scenario::CopenhagenScenario, version::V2013R{RockyRoadFlavo
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end

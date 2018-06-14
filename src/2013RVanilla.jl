@@ -3,7 +3,7 @@ immutable VanillaOptions <: Options
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
     ρ::Float64 #Initial rate of social time preference per year ρ
-    γₑ::Float64 #Capital elasticity in production function
+    γₑ::Float64 #Capital elasticity in production function (Capital share)
     pop₀::Int #Initial world population (millions)
     popadj::Float64 #Growth rate to calibrate to 2050 pop projection
     popasym::Int #Asymptotic population (millions)
@@ -341,15 +341,6 @@ function model_eqs(version::V2013R{VanillaFlavour}, model::JuMP.Model, config::V
     VanillaEquations(eeq,cc)
 end
 
-struct VanillaResults <: Results
-    scc::Array{Float64,1}
-end
-
-function model_results(version::V2013R{VanillaFlavour}, eqs::Equations)
-    scc = -1000.*getdual(eqs.eeq)./getdual(eqs.cc);
-    VanillaResults(scc)
-end
-
 function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
@@ -368,7 +359,7 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour}
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
@@ -402,7 +393,7 @@ function dice_solve(scenario::OptimalPriceScenario, version::V2013R{VanillaFlavo
     solve(model);
     solve(model);
 
-    results = model_results(version, equations);
+    results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
