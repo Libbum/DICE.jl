@@ -290,10 +290,11 @@ end
 
 function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables, ψ₂::JuMP.NonlinearParameter)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
+    #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @constraint(model, [i=1:N], vars.E[i] ==vars. Eind[i] + params.Etree[i]);
+    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
     # Industrial Emissions
     @constraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
     # Radiative forcing equation
@@ -406,7 +407,6 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{RockyRoadFlavou
     DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
 
-#TODO: Doesn't seem to actually be optimal...
 function dice_solve(scenario::OptimalPriceScenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
@@ -423,6 +423,11 @@ function dice_solve(scenario::OptimalPriceScenario, version::V2013R{RockyRoadFla
     @NLparameter(model, ψ₂ == config.ψ₂);
 
     equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    #NOTE: The follwing two steps don't seem to be in the RR implementation,
+    # but are required for the solution to converge as expected.
+    solve(model);
+    setvalue(ψ₂, config.ψ₂₀);
 
     setupperbound(variables.μ[1], config.μ₀);
 
@@ -451,6 +456,12 @@ function dice_solve(scenario::Limit2DegreesScenario, version::V2013R{RockyRoadFl
     @NLparameter(model, ψ₂ == config.ψ₂);
 
     equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    #NOTE: The follwing two steps don't seem to be in the RR implementation,
+    # but are required for the solution to converge as expected.
+    solve(model);
+    setvalue(ψ₂, config.ψ₂₀);
+
     for i in 1:config.N
         setupperbound(variables.Tₐₜ[i], 2.0);
     end
@@ -481,6 +492,11 @@ function dice_solve(scenario::SternScenario, version::V2013R{RockyRoadFlavour};
 
     equations = model_eqs(version, model, config, params, variables, ψ₂);
 
+    #NOTE: The follwing two steps don't seem to be in the RR implementation,
+    # but are required for the solution to converge as expected.
+    solve(model);
+    setvalue(ψ₂, config.ψ₂₀);
+
     solve(model);
     solve(model);
 
@@ -490,10 +506,10 @@ function dice_solve(scenario::SternScenario, version::V2013R{RockyRoadFlavour};
 end
 
 #TODO: This wont give the correct α and ρ values if the user overrides the options.
-#TODO: This is currently infeasable
+#TODO: Scenario is currently infeasable.
 function dice_solve(scenario::SternCalibratedScenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version, α = 2.1, ρ = 0.001),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+    solver = IpoptSolver(print_level=5, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     params = generate_parameters(config);
 
@@ -504,15 +520,15 @@ function dice_solve(scenario::SternCalibratedScenario, version::V2013R{RockyRoad
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    @NLparameter(model, ψ₂ == config.ψ₂);
+    @NLparameter(model, ψ₂ == config.ψ₂₀);
 
     equations = model_eqs(version, model, config, params, variables, ψ₂);
-
-    for i in 1:config.N
-        setlowerbound(variables.μ[i], 0.01);
-    end
     @constraint(model, variables.μ[1] == 0.038976);
     @constraint(model, variables.Tₐₜ[1] == 0.83);
+
+    for i in 2:config.N
+        setlowerbound(variables.μ[i], 0.01);
+    end
 
     solve(model);
     solve(model);
@@ -524,7 +540,6 @@ function dice_solve(scenario::SternCalibratedScenario, version::V2013R{RockyRoad
 end
 
 #NOTE: This is uncallibrated in the 2013R base code, so it's not here either.
-#TODO: Currently infeasable
 function dice_solve(scenario::CopenhagenScenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
@@ -545,6 +560,11 @@ function dice_solve(scenario::CopenhagenScenario, version::V2013R{RockyRoadFlavo
     @NLparameter(model, ψ₂ == config.ψ₂);
 
     equations = model_eqs(version, model, config, params, variables, ψ₂);
+
+    #NOTE: The follwing two steps don't seem to be in the RR implementation,
+    # but are required for the solution to converge as expected.
+    solve(model);
+    setvalue(ψ₂, config.ψ₂₀);
 
     # The Emissions Control Rate Imported
     imported_μ = fill(0.9, config.N);
