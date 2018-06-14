@@ -36,10 +36,10 @@ end
 end
 
 @testset "Invalid Vanilla Scenarios" begin
-    @test_throws MethodError dice_solve(Limit2Degrees, v2013R())
-    @test_throws MethodError dice_solve(Stern, v2013R())
-    @test_throws MethodError dice_solve(SternCalibrated, v2013R())
-    @test_throws MethodError dice_solve(Copenhagen, v2013R())
+    @test_throws ErrorException dice_solve(Limit2Degrees, v2013R())
+    @test_throws ErrorException dice_solve(Stern, v2013R())
+    @test_throws ErrorException dice_solve(SternCalibrated, v2013R())
+    @test_throws ErrorException dice_solve(Copenhagen, v2013R())
 end
 
 # Optimisation tests.
