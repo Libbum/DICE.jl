@@ -341,7 +341,7 @@ function model_eqs(version::V2013R{VanillaFlavour}, model::JuMP.Model, config::V
     VanillaEquations(eeq,cc)
 end
 
-function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour};
+function dice_solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
@@ -351,38 +351,20 @@ function dice_solve(scenario::BasePriceScenario, version::V2013R{VanillaFlavour}
     # Rate limit
     μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
 
-    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, params.cpricebase);
-
-    equations = model_eqs(version, model, config, params, variables);
-
-    solve(model);
-    solve(model);
-    solve(model);
-
-    results = model_results(model, config, params, variables, equations);
-
-    DICENarrative(config,params,model,scenario,version,variables,equations,results)
-end
-
-
-function dice_solve(scenario::OptimalPriceScenario, version::V2013R{VanillaFlavour};
-    config::VanillaOptions = dice_options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
-
-    params = generate_parameters(config);
-
-    model = Model(solver = solver);
-    # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
-
-    cprice_ubound = fill(Inf, config.N);
-    cprice_ubound[1] = params.cpricebase[1];
-    # Warning: If parameters are changed, the next equation might make base case infeasible.
-    # If so, reduce tnopol so that we don't run out of resources.
-    for i in 2:config.N
-        if i > config.tnopol
-            cprice_ubound[i] = 1000.0;
+    if typeof(scenario) <: BasePriceScenario
+        cprice_ubound = params.cpricebase
+    elseif typeof(scenario) <: OptimalPriceScenario
+        cprice_ubound = fill(Inf, config.N);
+        cprice_ubound[1] = params.cpricebase[1];
+        # Warning: If parameters are changed, the next equation might make base case infeasible.
+        # If so, reduce tnopol so that we don't run out of resources.
+        for i in 2:config.N
+            if i > config.tnopol
+                cprice_ubound[i] = 1000.0;
+            end
         end
+    else
+        error("$(scenario) is not a valid scenario for $(version)");
     end
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
