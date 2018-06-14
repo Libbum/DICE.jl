@@ -1,4 +1,4 @@
-struct Output <: Results
+struct ResultsV2013 <: Results
     years::Array{Int64,1}
     Mₐₜ::Array{Float64,1}
     Mₐₜppm::Array{Float64,1}
@@ -74,6 +74,6 @@ function model_results(model::JuMP.Model, config::Options, params::Parameters, v
     else
         -1000.*getdual(eqs.eeq)./getdual(eqs.yy)
     end;
-    Output(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,
+    ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,
                Y,E,Eind,Σ,I,K,MPK,C,CPC,PERIODU,UTILITY,S,co2price,cprice,μ,μ_participants,co2price_avg,RI,scc)
 end

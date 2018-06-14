@@ -20,7 +20,6 @@ abstract type Parameters end
 abstract type Variables end
 abstract type Equations end
 abstract type Results end
-include("Results.jl")
 
 struct DICENarrative
     constants::Options
