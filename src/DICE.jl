@@ -8,10 +8,6 @@ using Ipopt;
 #DICE Versions
 abstract type Version end
 
-#Scenarios
-abstract type Scenario end
-include("Scenarios.jl")
-
 #Configuration options & parameters
 abstract type Options end
 abstract type Parameters end
@@ -20,6 +16,10 @@ abstract type Parameters end
 abstract type Variables end
 abstract type Equations end
 abstract type Results end
+
+#Scenarios
+abstract type Scenario end
+include("Scenarios.jl")
 
 struct DICENarrative
     constants::Options

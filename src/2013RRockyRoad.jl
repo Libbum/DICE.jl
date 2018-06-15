@@ -1,4 +1,4 @@
-mutable struct RockyRoadOptions <: Options
+immutable RockyRoadOptions <: Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
@@ -163,6 +163,9 @@ immutable RockyRoadParameters <: Parameters
     σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
     λ::Float64 # Climate model parameter
     ξ₁::Float64 # Transient TSC Correction ("Speed of Adjustment Parameter")
+    ψ₂::JuMP.NonlinearParameter
+    α::JuMP.NonlinearParameter
+    ρ::JuMP.NonlinearParameter
     pbacktime::Array{Float64,1} # Backstop price
     gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
     Etree::Array{Float64,1} # Emissions from deforestation
@@ -174,12 +177,10 @@ immutable RockyRoadParameters <: Parameters
     σ::Array{Float64,1} # CO2-equivalent-emissions output ratio
     θ₁::Array{Float64,1} # Adjusted cost for backstop
     fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
-    partfract::Array{Float64,1} # Fraction of emissions in control regime
+    partfract::Array{JuMP.NonlinearParameter,1} # Fraction of emissions in control regime
 end
 
-function generate_parameters(c::RockyRoadOptions;
-                            participation::Array{Float64,1} = [1.0])
-    optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
+function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
@@ -188,6 +189,12 @@ function generate_parameters(c::RockyRoadOptions;
     σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
+
+    @NLparameter(model, ψ₂ == c.ψ₂);
+    @NLparameter(model, α == c.α);
+    @NLparameter(model, ρ == c.ρ);
+
+    optlrsav::Float64 = (c.δk + .004)/(c.δk + .004*getvalue(α) + getvalue(ρ))*c.γₑ; # Optimal savings rate
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
@@ -206,7 +213,7 @@ function generate_parameters(c::RockyRoadOptions;
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
         gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
-        rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
+        rr[i] = 1/((1+getvalue(ρ))^(c.tstep*(i-1)));
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
         fₑₓ[i] = if i < 19
                          c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
@@ -244,23 +251,21 @@ function generate_parameters(c::RockyRoadOptions;
     end
 
     # Fraction of emissions in control regime
-    if length(participation) == 1 #TODO: This is a bit of a hack. Would be nice to check this in a better way.
-        partfract = Array{Float64}(c.N);
-
-        for i in 1:c.N
-            partfract[i] = if i <= c.periodfullpart
-                                c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
-                           else
-                                c.partfractfull
-                           end;
-        end
-        partfract[1] = c.partfract2010;
-    else
-        partfract = participation;
+    pfract = Array{Float64}(c.N);
+    for i in 1:c.N
+        pfract[i] = if i <= c.periodfullpart
+                            c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
+                       else
+                            c.partfractfull
+                       end;
     end
-    RockyRoadParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
+    pfract[1] = c.partfract2010;
+    @NLparameter(model, partfract[i=1:c.N] == pfract[i]);
+
+    RockyRoadParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,ψ₂,α,ρ,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
 end
 
+#TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
@@ -280,7 +285,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
+    print(io, "Fraction of emissions in control regieme: $(getvalue(opt.partfract))");
 end
 
 struct RockyRoadEquations <: Equations
@@ -288,7 +293,7 @@ struct RockyRoadEquations <: Equations
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 
-function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables, ψ₂::JuMP.NonlinearParameter)
+function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
@@ -300,7 +305,7 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
     # Equation for damage fraction
-    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
     @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
@@ -324,7 +329,7 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     # Period utility
     @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
-    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-config.α)-1)/(1-config.α)-1);
+    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-params.α)-1)/(1-params.α)-1);
 
     # Equations (offset) #
     # Cumulative carbon emissions
@@ -342,7 +347,7 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     # Capital balance equation
     @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
-    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
+    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
     @constraint(model, vars.S[i=N-10:N] .== params.optlrsav);
@@ -363,94 +368,32 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     RockyRoadEquations(eeq,yy)
 end
 
+include("ScenariosRockyRoad.jl")
+
 function dice_solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = dice_options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
-    if typeof(scenario) <: SternScenario
-        config.α = 1.01;
-        config.ρ = 0.001;
-    end
-
-    if typeof(scenario) <: SternCalibratedScenario
-        config.α = 2.1;
-        config.ρ = 0.001;
-    end
-
-    if typeof(scenario) <: CopenhagenScenario
-        #The Copenhagen participation fraction.
-        imported_partfrac = ones(config.N);
-        imported_partfrac[1:19] = [0.2,0.390423082,0.379051794,0.434731269,0.42272216,0.410416777,0.707776548,0.692148237,0.840306905,0.834064356,0.939658852,0.936731085,0.933881267,0.930944201,0.928088049,0.925153812,0.922301007,0.919378497,1.0];
-
-        params = generate_parameters(config, participation = imported_partfrac);
-    else
-        params = generate_parameters(config);
-    end
-
     model = Model(solver = solver);
+    params = generate_parameters(config, model);
+
     # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
+    μ_ubound = [if t < 30 1.0 else config.limμ*getvalue(params.partfract[t]) end for t in 1:config.N];
     cprice_ubound = fill(Inf, config.N); #No initial price bound
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    @NLparameter(model, ψ₂ == config.ψ₂);
-
-    equations = model_eqs(version, model, config, params, variables, ψ₂);
+    equations = model_eqs(version, model, config, params, variables);
 
     solve(model);
 
-    setvalue(ψ₂, config.ψ₂₀);
+    setvalue(params.ψ₂, config.ψ₂₀);
 
-    if typeof(scenario) <: BasePriceScenario
-        photel = getvalue(variables.CPRICE);
-
-        for i in 1:config.N
-            if i <= config.tnopol
-                setupperbound(variables.CPRICE[i], max(photel[i],params.cpricebase[i]));
-            end
-        end
-    elseif typeof(scenario) <: OptimalPriceScenario
-        setupperbound(variables.μ[1], config.μ₀);
-    elseif typeof(scenario) <: Limit2DegreesScenario
-        for i in 1:config.N
-            setupperbound(variables.Tₐₜ[i], 2.0);
-        end
-    elseif typeof(scenario) <: SternCalibratedScenario
-        #NOTE: This should ultimately be the following constraints, but
-        #the JuMP/Ipopt configuration currently add new constraints
-        #after solving. So we just bind the variable to its upper and lower bounds.
-
-        #@constraint(model, variables.μ[1] == 0.038976);
-        #@constraint(model, variables.Tₐₜ[1] == 0.83);
-        setlowerbound(variables.μ[1], 0.038976);
-        setupperbound(variables.μ[1], 0.038976);
-        setlowerbound(variables.Tₐₜ[1], 0.83);
-        setupperbound(variables.Tₐₜ[1], 0.83);
-
-        for i in 2:config.N
-            setlowerbound(variables.μ[i], 0.01);
-        end
-    elseif typeof(scenario) <: CopenhagenScenario
-        # The Emissions Control Rate Imported
-        imported_μ = fill(0.9, config.N);
-        imported_μ[1:27] = [0.02,0.055874801,0.110937151,0.163189757,0.206247482,0.241939219,0.30180914,0.364484979,0.423670192,0.478283881,0.534073643,0.588156847,0.633622,0.672457,0.705173102,0.733018573,0.756457118,0.776297581,0.794110815,0.822197128,0.839125811,0.854453754,0.868106413,0.880485825,0.891631752,0.901741794,0.9];
-        #NOTE: This should ultimately be the following constraints, but
-        #the JuMP/Ipopt configuration currently add new constraints
-        #after solving. So we just bind the variable to its upper and lower bounds.
-
-        #@constraint(model, [i=1:config.N], variables.μ[i] == imported_μ[i]);
-        #setlowerbound(variables.μ[1], 0.0);
-        #setupperbound(variables.μ[1], 1.5);
-
-        for i in 1:config.N
-            setlowerbound(variables.μ[i], imported_μ[i]);
-            setupperbound(variables.μ[i], imported_μ[i]);
-        end
-    end
+    assign_scenario(scenario, config, params, variables);
 
     solve(model);
     solve(model);
+
     results = model_results(model, config, params, variables, equations);
 
     DICENarrative(config,params,model,scenario,version,variables,equations,results)

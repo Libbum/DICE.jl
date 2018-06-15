@@ -67,7 +67,11 @@ function model_results(model::JuMP.Model, config::Options, params::Parameters, v
     cprice = getvalue(vars.CPRICE)*3.666;
     μ = getvalue(vars.μ);
     μ_participants = (co2price./params.pbacktime).^(1/(config.θ₂-1));
-    co2price_avg = co2price.*params.partfract;
+    co2price_avg = if typeof(params) <: VanillaParameters
+        co2price.*params.partfract
+    else
+        co2price.*getvalue(params.partfract)
+    end;
     RI = getvalue(vars.RI);
     scc = if typeof(eqs) <: VanillaEquations
         -1000.*getdual(eqs.eeq)./getdual(eqs.cc)
