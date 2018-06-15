@@ -1,6 +1,10 @@
 <h1 align="center">DICE.jl</h1>
 
 <div align="center">
+    <a href="https://libbum.github.io/DICE.jl/latest">
+        <img src="https://img.shields.io/badge/docs-latest-blue.svg" alt="Documentation" />
+    </a>
+    │
     <a href="https://travis-ci.org/Libbum/DICE.jl">
         <img src="https://travis-ci.org/Libbum/DICE.jl.svg?branch=master" alt="Travis-ci" />
     </a>
