@@ -7,10 +7,11 @@ else
 end
 
 model = Model();
+modelrr = Model();
 vanilla_opt = dice_options(v2013R());
 rr_opt = dice_options(v2013R(RockyRoad));
 vanilla_params = DICE.generate_parameters(vanilla_opt);
-rr_params = DICE.generate_parameters(rr_opt, model);
+rr_params = DICE.generate_parameters(rr_opt, modelrr);
 
 @testset "Types Display" begin
     @testset "Flavour" begin
@@ -41,10 +42,10 @@ end
 #Use same limits for RR case for simplicity
 μ_ubound = [if t < 30 1.0 else vanilla_opt.limμ*vanilla_params.partfract[t] end for t in 1:vanilla_opt.N];
 vanilla_vars = DICE.model_vars(v2013R(), model, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, vanilla_params.cpricebase);
-rr_vars = DICE.model_vars(v2013R(RockyRoad), model, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, fill(Inf, vanilla_opt.N));
+rr_vars = DICE.model_vars(v2013R(RockyRoad), modelrr, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, fill(Inf, vanilla_opt.N));
 
 vanilla_eqs = DICE.model_eqs(v2013R(), model, vanilla_opt, vanilla_params, vanilla_vars);
-rr_eqs = DICE.model_eqs(v2013R(RockyRoad), model, rr_opt, rr_params, rr_vars);
+rr_eqs = DICE.model_eqs(v2013R(RockyRoad), modelrr, rr_opt, rr_params, rr_vars);
 @testset "Model Construction" begin
     @testset "Variables" begin
         @test typeof(vanilla_vars) <: DICE.VariablesV2013
@@ -84,19 +85,16 @@ rr_eqs = DICE.model_eqs(v2013R(RockyRoad), model, rr_opt, rr_params, rr_vars);
     end
 end
 
-baserun = dice_solve(BasePrice, v2013R());
-optimalrun = dice_solve(OptimalPrice, v2013R());
-
 # Optimisation tests.
 # Currently, for some unknown reason, we cannot solve these
 # tests in the travis environment. They become unfeaseable or
 # hit some type of resource limit.
-@testset "Utility" begin
-    @testset "Vanilla" begin
-        if get(ENV, "TRAVIS", "false") == "false"
-            @test_broken getvalue(baserun.variables.UTILITY) ≈ 2670.2779245830334
-            @test_broken getvalue(optimalrun.variables.UTILITY) ≈ 2690.244712873159
-        else
+if get(ENV, "TRAVIS", "false") == "false"
+    @testset "Utility" begin
+        @testset "Vanilla" begin
+            baserun = dice_solve(BasePrice, v2013R());
+            optimalrun = dice_solve(OptimalPrice, v2013R());
+
             @test getvalue(baserun.variables.UTILITY) ≈ 2670.2779245830334
             @test getvalue(optimalrun.variables.UTILITY) ≈ 2690.244712873159
         end
