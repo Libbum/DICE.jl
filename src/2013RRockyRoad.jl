@@ -190,7 +190,7 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
 
-    @NLparameter(model, ψ₂ == c.ψ₂);
+    @NLparameter(model, ψ₂ == c.ψ₂₀);
     @NLparameter(model, α == c.α);
     @NLparameter(model, ρ == c.ρ);
 
@@ -387,7 +387,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     JuMP.solve(model);
 
-    setvalue(params.ψ₂, config.ψ₂₀);
+    setvalue(params.ψ₂, config.ψ₂);
 
     assign_scenario(scenario, config, params, variables);
 
