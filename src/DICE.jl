@@ -1,6 +1,9 @@
 module DICE
 
-using JuMP;
+#Don't polute the namespace. We want to use `solve` ourselves.
+import JuMP;
+import JuMP: @variable, @constraint, @NLconstraint, @objective, @NLparameter;
+import JuMP: getvalue, setvalue, getdual, setupperbound, setlowerbound;
 #Ipopt is distributed under the EPL.
 #We don't package it here though, and assume you have this set up on your system already.
 using Ipopt;
@@ -32,15 +35,15 @@ struct DICENarrative
     results::Results
 end
 
-function Base.show(io::IO, ::MIME"text/plain", model::DICENarrative)
-    println(io, "$(model.scenario) scenario using $(model.version).")
-    show(io, model.model)
+function Base.show(io::IO, ::MIME"text/plain", dice::DICENarrative)
+    println(io, "$(dice.scenario) scenario using $(dice.version).")
+    show(io, dice.model)
 end
 
-function dice_solve end
-function dice_options end
+function solve end
+function options end
 
-export dice_solve, dice_options
+export solve, options
 
 include("2013R.jl")
 include("2016R.jl")

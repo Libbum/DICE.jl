@@ -54,7 +54,7 @@ immutable VanillaOptions <: Options
     scale2::Float64 #Additive scaling coefficient
 end
 
-function dice_options(version::V2013R{VanillaFlavour};
+function options(version::V2013R{VanillaFlavour};
     N::Int = 60, #Number of years to calculate (from 2010 onwards)
     tstep::Int = 5, #Years per Period
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
@@ -343,13 +343,13 @@ end
 
 include("ScenariosVanilla.jl")
 
-function dice_solve(scenario::Scenario, version::V2013R{VanillaFlavour};
-    config::VanillaOptions = dice_options(version),
+function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
+    config::VanillaOptions = options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     params = generate_parameters(config);
 
-    model = Model(solver = solver);
+    model = JuMP.Model(solver = solver);
     # Rate limit
     μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
 
@@ -359,9 +359,9 @@ function dice_solve(scenario::Scenario, version::V2013R{VanillaFlavour};
 
     equations = model_eqs(version, model, config, params, variables);
 
-    solve(model);
-    solve(model);
-    solve(model);
+    JuMP.solve(model);
+    JuMP.solve(model);
+    JuMP.solve(model);
 
     results = model_results(model, config, params, variables, equations);
 

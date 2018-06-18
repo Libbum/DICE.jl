@@ -58,7 +58,7 @@ immutable RockyRoadOptions <: Options
     scale2::Float64 #Additive scaling coefficient
 end
 
-function dice_options(version::V2013R{RockyRoadFlavour};
+function options(version::V2013R{RockyRoadFlavour};
     N::Int = 60, #Number of years to calculate (from 2010 onwards)
     tstep::Int = 5, #Years per Period
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
@@ -370,11 +370,11 @@ end
 
 include("ScenariosRockyRoad.jl")
 
-function dice_solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
-    config::RockyRoadOptions = dice_options(version),
+function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
+    config::RockyRoadOptions = options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
-    model = Model(solver = solver);
+    model = JuMP.Model(solver = solver);
     params = generate_parameters(config, model);
 
     # Rate limit
@@ -385,14 +385,14 @@ function dice_solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     equations = model_eqs(version, model, config, params, variables);
 
-    solve(model);
+    JuMP.solve(model);
 
     setvalue(params.ψ₂, config.ψ₂₀);
 
     assign_scenario(scenario, config, params, variables);
 
-    solve(model);
-    solve(model);
+    JuMP.solve(model);
+    JuMP.solve(model);
 
     results = model_results(model, config, params, variables, equations);
 

@@ -110,5 +110,3 @@ end
 include("2013Results.jl")
 include("2013RVanilla.jl")
 include("2013RRockyRoad.jl")
-
-export rockyroad_2013R, rockyroad_2013R_options

@@ -1,15 +1,15 @@
 using DICE
-using JuMP
+import JuMP
 @static if VERSION < v"0.7.0-DEV.2005"
     using Base.Test
 else
     using Test
 end
 
-model = Model();
-modelrr = Model();
-vanilla_opt = dice_options(v2013R());
-rr_opt = dice_options(v2013R(RockyRoad));
+model = JuMP.Model();
+modelrr = JuMP.Model();
+vanilla_opt = options(v2013R());
+rr_opt = options(v2013R(RockyRoad));
 vanilla_params = DICE.generate_parameters(vanilla_opt);
 rr_params = DICE.generate_parameters(rr_opt, modelrr);
 
@@ -63,25 +63,25 @@ rr_eqs = DICE.model_eqs(v2013R(RockyRoad), modelrr, rr_opt, rr_params, rr_vars);
         @test all(x->(vanilla_optimal_price[x] ≈ 1000.0), Int(vanilla_opt.tnopol+1):vanilla_opt.N)
         # Needs CPRICE, so requires a successful model run to test.
         DICE.assign_scenario(BasePrice, rr_opt, rr_params, rr_vars);
-        @test_broken all(isfinite.(getupperbound(rr_vars.CPRICE)))
+        @test_broken all(isfinite.(JuMP.getupperbound(rr_vars.CPRICE)))
         DICE.assign_scenario(OptimalPrice, rr_opt, rr_params, rr_vars);
-        @test getupperbound(rr_vars.μ[1]) == rr_opt.μ₀
+        @test JuMP.getupperbound(rr_vars.μ[1]) == rr_opt.μ₀
         DICE.assign_scenario(Limit2Degrees, rr_opt, rr_params, rr_vars);
-        @test getupperbound(rr_vars.Tₐₜ[1]) ≈ 2.0
+        @test JuMP.getupperbound(rr_vars.Tₐₜ[1]) ≈ 2.0
         DICE.assign_scenario(Stern, rr_opt, rr_params, rr_vars);
-        @test getvalue(rr_params.α) ≈ 1.01
+        @test JuMP.getvalue(rr_params.α) ≈ 1.01
         DICE.assign_scenario(SternCalibrated, rr_opt, rr_params, rr_vars);
-        @test getvalue(rr_params.α) ≈ 2.1
+        @test JuMP.getvalue(rr_params.α) ≈ 2.1
         DICE.assign_scenario(Copenhagen, rr_opt, rr_params, rr_vars);
-        @test getvalue(rr_params.partfract[2]) ≈ 0.390423082
-        @test getlowerbound(rr_vars.μ[3]) ≈ 0.110937151
-        @test getupperbound(rr_vars.μ[3]) ≈ 0.110937151
+        @test JuMP.getvalue(rr_params.partfract[2]) ≈ 0.390423082
+        @test JuMP.getlowerbound(rr_vars.μ[3]) ≈ 0.110937151
+        @test JuMP.getupperbound(rr_vars.μ[3]) ≈ 0.110937151
     end
     @testset "Invalid Vanilla Scenarios" begin
-        @test_throws ErrorException dice_solve(Limit2Degrees, v2013R())
-        @test_throws ErrorException dice_solve(Stern, v2013R())
-        @test_throws ErrorException dice_solve(SternCalibrated, v2013R())
-        @test_throws ErrorException dice_solve(Copenhagen, v2013R())
+        @test_throws ErrorException solve(Limit2Degrees, v2013R())
+        @test_throws ErrorException solve(Stern, v2013R())
+        @test_throws ErrorException solve(SternCalibrated, v2013R())
+        @test_throws ErrorException solve(Copenhagen, v2013R())
     end
 end
 
@@ -92,11 +92,11 @@ end
 if get(ENV, "TRAVIS", "false") == "false"
     @testset "Utility" begin
         @testset "Vanilla" begin
-            baserun = dice_solve(BasePrice, v2013R());
-            optimalrun = dice_solve(OptimalPrice, v2013R());
+            baserun = solve(BasePrice, v2013R());
+            optimalrun = solve(OptimalPrice, v2013R());
 
-            @test getvalue(baserun.variables.UTILITY) ≈ 2670.2779245830334
-            @test getvalue(optimalrun.variables.UTILITY) ≈ 2690.244712873159
+            @test baserun.results.UTILITY ≈ 2670.2779245830334
+            @test optimalrun.results.UTILITY ≈ 2690.244712873159
         end
     end
 end

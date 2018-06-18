@@ -22,7 +22,18 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 ## Models
 
-For now, the Vanilla 2013R version is the only one residing here, more are on their way.
+**Implemented**
+- v2013R (Vanilla Version)
+
+**In testing phase**
+- v2013R (Rocky Road Version)
+- v2016R2
+
+**Planned**
+- DICE-CJL
+-  van der Ploeg safe carbon budget
+
+Suggestions and additions welcomed.
 
 ## Usage
 
@@ -60,26 +71,25 @@ The simplest of files to run the default solution looks like this:
 ```julia
 using DICE;
 
-dice = dice_solve(OptimalPrice, v2013R());
-getvalue(dice.variables.UTILITY)
+dice = solve(OptimalPrice, v2013R());
+dice.results.UTILITY
 ```
 
 A more fleshed out example, enabling you to alter the configuration is also simple enough:
 
 ```julia
-using JuMP;
 using Ipopt;
 using DICE;
 using Plots;
 unicodeplots()
 
 version = v2013R(); #Vanilla flavour
-conf = dice_options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
+conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
 ipopt = IpoptSolver(print_level=0)); #Don't print output when optimising solution
-dice = dice_solve(BasePrice, version, config = conf, solver = ipopt);
+dice = solve(BasePrice, version, config = conf, solver = ipopt);
 
-years = 2005+(dice.constants.tstep*(1:dice.constants.N)); # Set up a valid time axis
-plot(years,dice.results.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
+r = dice.results;
+plot(r.years,r.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
 ```
 
 yielding the estimated global cost of carbon emissions out to 2300 without an optimal carbon price
