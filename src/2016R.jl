@@ -85,7 +85,7 @@ function options(version::V2016R;
     γₑ::Float64 = 0.3, #Capital elasticity in production function
     pop₀::Int = 7403, #Initial world population 2015 (millions)
     popadj::Float64 = 0.134, #Growth rate to calibrate to 2050 pop projection
-    popasym::Int = 10500, #Asymptotic population (millions)
+    popasym::Int = 11500, #Asymptotic population (millions)
     δk::Float64 = 0.1, #Depreciation rate on capital (per year)
     q₀::Float64 = 105.5, #Initial world gross output 2015 (trill 2010 USD)
     k₀::Float64 = 223.0, #Initial capital value 2015 (trill 2010 USD)
@@ -173,7 +173,7 @@ immutable ParametersV2016 <: Parameters
     ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
     ϕ₃₂::Float64 # Carbon cycle transition matrix coefficient
     ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
-    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
+    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
     λ::Float64 # Climate model parameter
     ψ₂::JuMP.NonlinearParameter
     pbacktime::Array{Float64,1} # Backstop price
@@ -198,7 +198,7 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
     ϕ₃₂::Float64 = c.ϕ₂₃*c.mueq/c.mleq; # Carbon cycle transition matrix coefficient
     ϕ₃₃::Float64 = 1 - ϕ₃₂; # Carbon cycle transition matrix coefficient
-    σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
+    σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
 
     @NLparameter(model, ψ₂ == c.ψ₂₀);
@@ -256,10 +256,10 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
         fₑₓ[i] = if i < 18
-                         c.fₑₓ0+(1/17)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
-                     else
-                         c.fₑₓ1-c.fₑₓ0
-                     end;
+                        c.fₑₓ0+(1/17)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
+                    else
+                        c.fₑₓ1-c.fₑₓ0
+                    end;
     end
     ParametersV2016(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ψ₂,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,cumtree,θ₁,fₑₓ)
 end
@@ -295,23 +295,23 @@ struct VariablesV2016 <: Variables
     Mₗₒ::Array{JuMP.Variable,1} # Carbon concentration increase in lower oceans (GtC from 1750)
     E::Array{JuMP.Variable,1} # Total CO2 emissions (GtCO2 per year)
     Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
-    C::Array{JuMP.Variable,1} # Consumption (trillions 2005 US dollars per year)
-    K::Array{JuMP.Variable,1} # Capital stock (trillions 2005 US dollars)
-    CPC::Array{JuMP.Variable,1} #  Per capita consumption (thousands 2005 USD per year)
-    I::Array{JuMP.Variable,1} # Investment (trillions 2005 USD per year)
+    C::Array{JuMP.Variable,1} # Consumption (trillions 2010 US dollars per year)
+    K::Array{JuMP.Variable,1} # Capital stock (trillions 2010 US dollars)
+    CPC::Array{JuMP.Variable,1} # Per capita consumption (thousands 2010 USD per year)
+    I::Array{JuMP.Variable,1} # Investment (trillions 2010 USD per year)
     S::Array{JuMP.Variable,1} # Gross savings rate as fraction of gross world product
     RI::Array{JuMP.Variable,1} # Real interest rate (per annum)
-    Y::Array{JuMP.Variable,1} # Gross world product net of abatement and damages (trillions 2005 USD per year)
-    YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
-    YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2005 USD per year)
-    DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2005 USD per year)
+    Y::Array{JuMP.Variable,1} # Gross world product net of abatement and damages (trillions 2010 USD per year)
+    YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2010 USD per year)
+    YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2010 USD per year)
+    DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2010 USD per year)
     Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
-    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2005 USD per year)
-    MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2005$ per ton CO2)
+    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2010 USD per year)
+    MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2010$ per ton CO2)
     CCA::Array{JuMP.Variable,1} # Cumulative industrial carbon emissions (GTC)
     CCATOT::Array{JuMP.Variable,1} # Total carbon emissions (GTC)
     PERIODU::Array{JuMP.Variable,1} # One period utility function
-    CPRICE::Array{JuMP.Variable,1} # Carbon price (2005$ per ton of CO2)
+    CPRICE::Array{JuMP.Variable,1} # Carbon price (2010$ per ton of CO2)
     CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
     UTILITY::JuMP.Variable # Welfare function
 end
@@ -329,23 +329,23 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     @variable(model, Mₗₒ[1:N] >= 1000.0); # Carbon concentration increase in lower oceans (GtC from 1750)
     @variable(model, E[1:N]); # Total CO2 emissions (GtCO2 per year)
     @variable(model, Eind[1:N]); # Industrial emissions (GtCO2 per year)
-    @variable(model, C[1:N] >= 2.0); # Consumption (trillions 2005 US dollars per year)
-    @variable(model, K[1:N] >= 1.0); # Capital stock (trillions 2005 US dollars)
-    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2005 USD per year)
-    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2005 USD per year)
+    @variable(model, C[1:N] >= 2.0); # Consumption (trillions 2010 US dollars per year)
+    @variable(model, K[1:N] >= 1.0); # Capital stock (trillions 2010 US dollars)
+    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2010 USD per year)
+    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2010 USD per year)
     @variable(model, S[1:N]); # Gross savings rate as fraction of gross world product
     @variable(model, RI[1:N]); # Real interest rate (per annum)
-    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2005 USD per year)
-    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
-    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2005 USD per year)
-    @variable(model, DAMAGES[1:N]); # Damages (trillions 2005 USD per year)
+    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2010 USD per year)
+    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2010 USD per year)
+    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2010 USD per year)
+    @variable(model, DAMAGES[1:N]); # Damages (trillions 2010 USD per year)
     @variable(model, Ω[1:N]); # Damages as fraction of gross output
-    @variable(model, Λ[1:N]); # Cost of emissions reductions  (trillions 2005 USD per year)
-    @variable(model, MCABATE[1:N]); # Marginal cost of abatement (2005$ per ton CO2)
+    @variable(model, Λ[1:N]); # Cost of emissions reductions  (trillions 2010 USD per year)
+    @variable(model, MCABATE[1:N]); # Marginal cost of abatement (2010$ per ton CO2)
     @variable(model, CCA[1:N] <= cca_ubound); # Cumulative industrial carbon emissions (GTC)
     @variable(model, CCATOT[1:N]); # Total carbon emissions (GTC)
     @variable(model, PERIODU[1:N]); # One period utility function
-    @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2005$ per ton of CO2)
+    @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2010$ per ton of CO2)
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,CCATOT,PERIODU,CPRICE,CEMUTOTPER,UTILITY)
