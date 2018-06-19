@@ -269,6 +269,7 @@ struct VanillaEquations <: Equations
     cc::Array{JuMP.ConstraintRef,1} # Consumption equation
 end
 
+#TODO: I think we can drop the version requirement here.
 function model_eqs(version::V2013R{VanillaFlavour}, model::JuMP.Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
     N = config.N;
     # Equations #

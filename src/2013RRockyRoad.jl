@@ -180,6 +180,7 @@ immutable RockyRoadParameters <: Parameters
     partfract::Array{JuMP.NonlinearParameter,1} # Fraction of emissions in control regime
 end
 
+#TODO: rr may need to be a parameter too, since it changes in some scenarios.
 function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -293,6 +294,7 @@ struct RockyRoadEquations <: Equations
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 
+#TODO: I think we can drop the version requirement here.
 function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
