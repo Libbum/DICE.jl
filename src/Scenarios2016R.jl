@@ -17,6 +17,6 @@ function assign_scenario(s::OptimalPriceScenario, model::JuMP.Model, config::Opt
     setupperbound(vars.μ[1], config.μ₀);
 end
 
-function assign_scenario(s::Scenario, config::OptionsV2016, params::ParametersV2016)
+function assign_scenario(s::Scenario, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     error("$(s) is not a valid scenario for v2016R beta");
 end
