@@ -21,7 +21,7 @@ rr_params = DICE.generate_parameters(rr_opt, modelrr);
     @testset "Version" begin
         @test sprint(show, v2013R()) == "v2013R (Vanilla flavour)"
         @test sprint(show, v2013R(RockyRoad)) == "v2013R (Rocky Road flavour)"
-        @test sprint(show, v2016R()) == "v2016R"
+        @test sprint(show, v2016R()) == "v2016R beta"
     end
     @testset "Scenario" begin
         @test sprint(show, BasePrice) == "Base (current policy) carbon price"

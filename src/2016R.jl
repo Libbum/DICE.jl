@@ -11,7 +11,7 @@ Note that this is a beta version following `DICE2016R-091916ap.gms`.
 # Examples
 ```jldoctest
 julia> v2016R()
-v2016R
+v2016R beta
 ```
 """
 function v2016R()
@@ -165,6 +165,126 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
+#NOTE: partfract removed, cumtree added, fₑₓ timing dropped by 1. issue #1.
+immutable ParametersV2016 <: Parameters
+    optlrsav::Float64 # Optimal savings rate
+    ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₃₂::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
+    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
+    λ::Float64 # Climate model parameter
+    ψ₂::JuMP.NonlinearParameter
+    pbacktime::Array{Float64,1} # Backstop price
+    gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
+    Etree::Array{Float64,1} # Emissions from deforestation
+    rr::Array{Float64,1} # Average utility social discount rate
+    cpricebase::Array{Float64,1} # Carbon price in base case
+    L::Array{Float64,1} # Level of population and labor
+    A::Array{Float64,1} # Level of total factor productivity
+    gσ::Array{Float64,1} # Change in sigma (cumulative improvement of energy efficiency)
+    σ::Array{Float64,1} # CO2-equivalent-emissions output ratio
+    cumtree::Array{Float64,1} # Cumulative from land
+    θ₁::Array{Float64,1} # Adjusted cost for backstop
+    fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
+end
+
+
+function generate_parameters(c::OptionsV2016, model::JuMP.Model)
+    optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
+    ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
+    ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
+    ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
+    ϕ₃₂::Float64 = c.ϕ₂₃*c.mueq/c.mleq; # Carbon cycle transition matrix coefficient
+    ϕ₃₃::Float64 = 1 - ϕ₃₂; # Carbon cycle transition matrix coefficient
+    σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
+    λ::Float64 = c.η/c.t2xco2; # Climate model parameter
+
+    @NLparameter(model, ψ₂ == c.ψ₂₀);
+
+    # Backstop price
+    pbacktime = Array{Float64}(c.N);
+    # Growth rate of productivity from 0 to N
+    gₐ = Array{Float64}(c.N);
+    # Emissions from deforestation
+    Etree = Array{Float64}(c.N);
+    # Average utility social discount rate
+    rr = Array{Float64}(c.N);
+    # Carbon price in base case
+    cpricebase = Array{Float64}(c.N);
+
+    for i in 1:c.N
+        pbacktime[i] = c.pback*(1-c.gback)^(i-1);
+        gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
+        Etree[i] = c.eland₀*(1-c.deland)^(i-1);
+        rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
+        cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
+    end
+
+    # Initial conditions and offset required
+    # Level of population and labor
+    L = Array{Float64}(c.N);
+    L[1] = c.pop₀;
+    # Level of total factor productivity
+    A = Array{Float64}(c.N);
+    A[1] = c.a₀;
+    # Change in sigma (cumulative improvement of energy efficiency)
+    gσ = Array{Float64}(c.N);
+    gσ[1] = c.gσ₁;
+    # CO2-equivalent-emissions output ratio
+    σ = Array{Float64}(c.N);
+    σ[1] = σ₀;
+
+    # Cumulative from land
+    cumtree = Array{Float64}(c.N);
+    cumtree[1] = 100.0;
+
+    for i in 1:c.N-1
+        L[i+1] = L[i]*(c.popasym/L[i])^c.popadj;
+        A[i+1] = A[i]/(1-gₐ[i]);
+        gσ[i+1] = gσ[i]*((1+c.δσ)^c.tstep);
+        σ[i+1] = σ[i]*exp.(gσ[i]*c.tstep);
+        cumtree[i+1] = cumtree[i]+Etree[i]*(5/3.666);
+    end
+
+    # Adjusted cost for backstop
+    θ₁ = Array{Float64}(c.N);
+    # Exogenous forcing for other greenhouse gases
+    fₑₓ = Array{Float64}(c.N);
+
+    for i in 1:c.N
+        θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
+        fₑₓ[i] = if i < 18
+                         c.fₑₓ0+(1/17)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
+                     else
+                         c.fₑₓ1-c.fₑₓ0
+                     end;
+    end
+    ParametersV2016(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ψ₂,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,cumtree,θ₁,fₑₓ)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
+    println(io, "Calculated Parameters for 2016R beta");
+    println(io, "Optimal savings rate: $(opt.optlrsav)");
+    println(io, "Carbon cycle transition matrix coefficients");
+    println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
+    println(io, "2015 Carbon intensity: $(opt.σ₀)");
+    println(io, "Climate model parameter: $(opt.λ)");
+    println(io, "Backstop price: $(opt.pbacktime)");
+    println(io, "Growth rate of productivity: $(opt.gₐ)");
+    println(io, "Emissions from deforestation: $(opt.Etree)");
+    println(io, "Avg utility social discout rate: $(opt.rr)");
+    println(io, "Base case carbon price: $(opt.cpricebase)");
+    println(io, "Population and labour: $(opt.L)");
+    println(io, "Total factor productivity: $(opt.A)");
+    println(io, "Δσ: $(opt.gσ)");
+    println(io, "σ: $(opt.σ)");
+    println(io, "cumtree: $(opt.cumtree)");
+    println(io, "θ₁: $(opt.θ₁)");
+    print(io, "Exogenious forcing: $(opt.fₑₓ)");
+end
+
 struct VariablesV2016 <: Variables
     μ::Array{JuMP.Variable,1} # Emission control rate GHGs
     FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
@@ -229,4 +349,116 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,CCATOT,PERIODU,CPRICE,CEMUTOTPER,UTILITY)
+end
+
+struct EquationsV2016 <: Equations
+    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+    cc::Array{JuMP.ConstraintRef,1} # Output Consumption
+end
+
+#TODO: I think we can drop the version requirement here.
+#NOTE: Addition CCATOT, Λ looses partfract term issue #1
+#NOTE: MCABATE and CPRICE are the same in the original...
+function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+    N = config.N;
+    # Equations #
+    # Emissions Equation
+    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
+    # Industrial Emissions
+    @constraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
+    # Cumulative total carbon emissions
+    @constraint(model, [i=1:N], vars.CCATOT[i] == vars.CCA[i] + params.cumtree[i]);
+    # Radiative forcing equation
+    @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
+    # Equation for damage fraction
+    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    # Damage equation
+    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
+    # Cost of exissions reductions equation
+    @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂);
+    # Equation for MC abatement
+    @NLconstraint(model, [i=1:N], vars.MCABATE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
+    # Carbon price equation from abatement
+    @NLconstraint(model, [i=1:N], vars.CPRICE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
+    # Output gross equation
+    @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
+    # Output net of damages equation
+    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
+    # Output net equation
+    @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    # Consumption equation
+    cc = @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    # Per capita consumption definition
+    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    # Savings rate equation
+    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
+    # Period utility
+    @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
+    # Instantaneous utility function equation
+    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-config.α)-1)/(1-config.α)-1);
+
+    # Equations (offset) #
+    # Cumulative carbon emissions
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*(5/3.666));
+    # Atmospheric concentration equation
+    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
+    # Lower ocean concentration
+    @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
+    # Shallow ocean concentration
+    @constraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
+    # Temperature-climate equation for atmosphere
+    @constraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + config.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
+    # Temperature-climate equation for lower oceans
+    @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
+    # Capital balance equation
+    @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
+    # Interest rate equation
+    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
+
+    # Savings rate for asympotic equilibrium
+    @constraint(model, vars.S[i=N-10:N] .== params.optlrsav);
+    # Initial conditions
+    @constraint(model, vars.CCA[1] == 400.0);
+    @constraint(model, vars.K[1] == config.k₀);
+    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
+    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
+    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+
+    @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
+
+    # Objective function
+    @objective(model, Max, vars.UTILITY);
+
+    EquationsV2016(eeq,cc)
+end
+
+include("Scenarios2016R.jl")
+include("2016Results.jl")
+
+function solve(scenario::Scenario, version::V2016R;
+    config::OptionsV2016 = options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    model = JuMP.Model(solver = solver);
+    params = generate_parameters(config, model);
+
+    # Rate limit
+    μ_ubound = [if t < 30 1.0 else config.limμ end for t in 1:config.N];
+    cprice_ubound = fill(Inf, config.N); #No initial price bound
+
+    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+
+    equations = model_eqs(version, model, config, params, variables);
+
+    assign_scenario(scenario, model, config, params, variables);
+
+    JuMP.solve(model);
+    JuMP.solve(model);
+    JuMP.solve(model);
+
+    results = model_results(model, config, params, variables, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end
