@@ -50,3 +50,23 @@
     scale1::Float64 #Multiplicative scaling coefficient
     scale2::Float64 #Additive scaling coefficient
 end
+
+@base type Parameters
+    ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₃₂::Float64 # Carbon cycle transition matrix coefficient
+    ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
+    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
+    λ::Float64 # Climate model parameter
+    pbacktime::Array{Float64,1} # Backstop price
+    gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
+    Etree::Array{Float64,1} # Emissions from deforestation
+    cpricebase::Array{Float64,1} # Carbon price in base case
+    L::Array{Float64,1} # Level of population and labor
+    A::Array{Float64,1} # Level of total factor productivity
+    gσ::Array{Float64,1} # Change in sigma (cumulative improvement of energy efficiency)
+    σ::Array{Float64,1} # CO2-equivalent-emissions output ratio
+    θ₁::Array{Float64,1} # Adjusted cost for backstop
+    fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
+end

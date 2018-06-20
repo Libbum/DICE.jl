@@ -111,31 +111,12 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-#NOTE: partfract removed, cumtree added, fₑₓ timing dropped by 1. issue #1.
-immutable ParametersV2016 <: Parameters
-    optlrsav::Float64 # Optimal savings rate
-    ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₃₂::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
-    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
-    λ::Float64 # Climate model parameter
-    ψ₂::JuMP.NonlinearParameter
-    pbacktime::Array{Float64,1} # Backstop price
-    gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
-    Etree::Array{Float64,1} # Emissions from deforestation
+@extend immutable ParametersV2016 <: Parameters
     rr::Array{Float64,1} # Average utility social discount rate
-    cpricebase::Array{Float64,1} # Carbon price in base case
-    L::Array{Float64,1} # Level of population and labor
-    A::Array{Float64,1} # Level of total factor productivity
-    gσ::Array{Float64,1} # Change in sigma (cumulative improvement of energy efficiency)
-    σ::Array{Float64,1} # CO2-equivalent-emissions output ratio
+    optlrsav::Float64 # Optimal savings rate
+    ψ₂::JuMP.NonlinearParameter
     cumtree::Array{Float64,1} # Cumulative from land
-    θ₁::Array{Float64,1} # Adjusted cost for backstop
-    fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
 end
-
 
 function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
@@ -207,7 +188,7 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
                         c.fₑₓ1-c.fₑₓ0
                     end;
     end
-    ParametersV2016(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ψ₂,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,cumtree,θ₁,fₑₓ)
+    ParametersV2016(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,pbacktime,gₐ,Etree,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,rr,optlrsav,ψ₂,cumtree)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
