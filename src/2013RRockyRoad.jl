@@ -154,7 +154,6 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
 end
 
 immutable RockyRoadParameters <: Parameters
-    optlrsav::Float64 # Optimal savings rate
     ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
@@ -166,10 +165,11 @@ immutable RockyRoadParameters <: Parameters
     ψ₂::JuMP.NonlinearParameter
     α::JuMP.NonlinearParameter
     ρ::JuMP.NonlinearParameter
+    optlrsav::JuMP.NonlinearParameter # Optimal savings rate
     pbacktime::Array{Float64,1} # Backstop price
     gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
     Etree::Array{Float64,1} # Emissions from deforestation
-    rr::Array{Float64,1} # Average utility social discount rate
+    rr::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
     cpricebase::Array{Float64,1} # Carbon price in base case
     L::Array{Float64,1} # Level of population and labor
     A::Array{Float64,1} # Level of total factor productivity
@@ -191,11 +191,13 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
 
-    @NLparameter(model, ψ₂ == c.ψ₂₀);
+    @NLparameter(model, ψ₂ == c.ψ₂);
     @NLparameter(model, α == c.α);
     @NLparameter(model, ρ == c.ρ);
-
-    optlrsav::Float64 = (c.δk + .004)/(c.δk + .004*getvalue(α) + getvalue(ρ))*c.γₑ; # Optimal savings rate
+    # Optimal savings rate
+    @NLparameter(model, optlrsav == (c.δk + .004)/(c.δk + .004*c.α + c.ρ)*c.γₑ);
+    # Average utility social discount rate
+    @NLparameter(model, rr[i=1:c.N] == 1/((1+c.ρ)^(c.tstep*(i-1))));
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
@@ -203,8 +205,6 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     gₐ = Array{Float64}(c.N);
     # Emissions from deforestation
     Etree = Array{Float64}(c.N);
-    # Average utility social discount rate
-    rr = Array{Float64}(c.N);
     # Carbon price in base case
     cpricebase = Array{Float64}(c.N);
     # Exogenous forcing for other greenhouse gases
@@ -214,7 +214,6 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
         gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
-        rr[i] = 1/((1+getvalue(ρ))^(c.tstep*(i-1)));
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
         fₑₓ[i] = if i < 19
                          c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
@@ -263,13 +262,13 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     pfract[1] = c.partfract2010;
     @NLparameter(model, partfract[i=1:c.N] == pfract[i]);
 
-    RockyRoadParameters(optlrsav,ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,ψ₂,α,ρ,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
+    RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,ψ₂,α,ρ,optlrsav,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
 end
 
 #TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
-    println(io, "Optimal savings rate: $(opt.optlrsav)");
+    println(io, "Optimal savings rate: $(getvalue(opt.optlrsav))");
     println(io, "Carbon cycle transition matrix coefficients");
     println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
     println(io, "2010 Carbon intensity: $(opt.σ₀)");
@@ -278,7 +277,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Backstop price: $(opt.pbacktime)");
     println(io, "Growth rate of productivity: $(opt.gₐ)");
     println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(opt.rr)");
+    println(io, "Avg utility social discout rate: $(getvalue(opt.rr))");
     println(io, "Base case carbon price: $(opt.cpricebase)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
@@ -329,7 +328,7 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     # Savings rate equation
     @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
-    @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
+    @NLconstraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
     @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-params.α)-1)/(1-params.α)-1);
 
@@ -352,7 +351,8 @@ function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config:
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    @constraint(model, vars.S[i=N-10:N] .== params.optlrsav);
+    # We need to get the value to use the .== construct here.
+    @constraint(model, vars.S[i=N-10:N] .== getvalue(params.optlrsav));
     # Initial conditions
     @constraint(model, vars.CCA[1] == 90.0);
     @constraint(model, vars.K[1] == config.k₀);
@@ -387,11 +387,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     equations = model_eqs(version, model, config, params, variables);
 
-    JuMP.solve(model);
-
-    setvalue(params.ψ₂, config.ψ₂);
-
-    assign_scenario(scenario, config, params, variables);
+    assign_scenario(scenario, model, config, params, variables);
 
     JuMP.solve(model);
     JuMP.solve(model);
