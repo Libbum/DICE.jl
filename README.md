@@ -24,10 +24,10 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 **Implemented**
 - v2013R (Vanilla Version)
+- v2016R Beta
 
 **In testing phase**
 - v2013R (Rocky Road Version)
-- v2016R Beta
 
 **Planned**
 - v2016R2 (see [this](https://github.com/Libbum/DICE.jl/issues/4) issue)
@@ -56,6 +56,9 @@ $ jupyter notebook
 ```
 
 and follow the generated link to your browser.
+If you don't need to interact with the notebook and are just curious about the output then github renders notebooks natively.
+You can just click on them and read through the output.
+All notebooks are stored in a previously executed state, whith all outputs rendered.
 
 ### Module
 
