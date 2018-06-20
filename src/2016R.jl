@@ -61,7 +61,6 @@ immutable OptionsV2016 <: Options
     ξ₄::Float64 #Transfer coefficient for lower level
     η::Float64 #Forcings of equilibrium CO2 doubling (Wm-2)
     ψ₁₀::Float64 #Initial damage intercept
-    ψ₂₀::Float64 #Initial damage quadratic term
     ψ₁::Float64 #Damage intercept
     ψ₂::Float64 #Damage quadratic term
     ψ₃::Float64 #Damage exponent
@@ -116,7 +115,6 @@ function options(version::V2016R;
     ξ₄::Float64 = 0.025, #Transfer coefficient for lower level
     η::Float64 = 3.6813, #Forcings of equilibrium CO2 doubling (Wm-2)
     ψ₁₀::Float64 = 0.0, #Initial damage intercept
-    ψ₂₀::Float64 = 0.00236, #Initial damage quadratic term
     ψ₁::Float64 = 0.0, #Damage intercept
     ψ₂::Float64 = 0.00236, #Damage quadratic term
     ψ₃::Float64 = 2.0, #Damage exponent
@@ -130,7 +128,7 @@ function options(version::V2016R;
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.0302455265681763, #Multiplicative scaling coefficient
     scale2::Float64 = -10993.704) #Additive scaling coefficient
-    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₂₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,fosslim,scale1,scale2)
+    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,fosslim,scale1,scale2)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
@@ -155,7 +153,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
     println(io, "tocean₀: $(opt.tocean₀), tatm₀: $(opt.tatm₀), ξ₁: $(opt.ξ₁)");
     println(io, "ξ₃: $(opt.ξ₃), ξ₄: $(opt.ξ₄), η: $(opt.η)");
     println(io, "Climate Damage Parameters");
-    println(io, "ψ₁: $(opt.ψ₁), ψ₂: $(opt.ψ₂), ψ₃: $(opt.ψ₃)");
+    println(io, "ψ₁₀: $(opt.ψ₁₀), ψ₁: $(opt.ψ₁), ψ₂: $(opt.ψ₂), ψ₃: $(opt.ψ₃)");
     println(io, "Abatement Cost");
     println(io, "θ₂: $(opt.θ₂), pback: $(opt.pback), gback: $(opt.gback), limμ: $(opt.limμ)");
     println(io, "tnopol: $(opt.tnopol), cprice₀: $(opt.cprice₀), gcprice: $(opt.gcprice)");
@@ -201,7 +199,7 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
 
-    @NLparameter(model, ψ₂ == c.ψ₂₀);
+    @NLparameter(model, ψ₂ == c.ψ₂);
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
