@@ -8,11 +8,13 @@ import JuMP: getvalue, setvalue, getdual, setupperbound, setlowerbound;
 #We don't package it here though, and assume you have this set up on your system already.
 using Ipopt;
 
+include("abstractions.jl")
+
 #DICE Versions
 abstract type Version end
 
 #Configuration options & parameters
-abstract type Options end
+include("BaseTypes.jl")
 abstract type Parameters end
 
 #Model settings and output
