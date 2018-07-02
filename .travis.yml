@@ -9,12 +9,18 @@ matrix:
     - julia: nightly
 notifications:
   email: true
+sudo: false
+cache:
+  directories:
+    - $HOME/usr
 addons:
     apt_packages:
         - gfortran
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
+before_cache:
+  - cp -R $HOME/.julia/*/Ipopt/deps/usr $HOME
 after_success:
   - |
       if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_JULIA_VERSION" == "0.6"  && "$TRAVIS_PULL_REQUEST" = "false" && "$TRAVIS_BRANCH" == "master" ]]; then
