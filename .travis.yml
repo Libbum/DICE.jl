@@ -12,9 +12,10 @@ notifications:
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
     packages:
-    - gfortran-8
+      - gfortran-8
+      - libstdc++-6-dev
 script:
   - sudo ln -s /usr/bin/gfortran-8 /usr/bin/gfortran
   - which gfortran
