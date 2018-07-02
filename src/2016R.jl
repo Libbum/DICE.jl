@@ -212,39 +212,11 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
     print(io, "Exogenious forcing: $(opt.fₑₓ)");
 end
 
-struct VariablesV2016 <: Variables
-    μ::Array{JuMP.Variable,1} # Emission control rate GHGs
-    FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
-    Tₐₜ::Array{JuMP.Variable,1} # Increase temperature of atmosphere (degrees C from 1900)
-    Tₗₒ::Array{JuMP.Variable,1} # Increase temperatureof lower oceans (degrees C from 1900)
-    Mₐₜ::Array{JuMP.Variable,1} # Carbon concentration increase in atmosphere (GtC from 1750)
-    Mᵤₚ::Array{JuMP.Variable,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
-    Mₗₒ::Array{JuMP.Variable,1} # Carbon concentration increase in lower oceans (GtC from 1750)
-    E::Array{JuMP.Variable,1} # Total CO2 emissions (GtCO2 per year)
-    Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
-    C::Array{JuMP.Variable,1} # Consumption (trillions 2010 US dollars per year)
-    K::Array{JuMP.Variable,1} # Capital stock (trillions 2010 US dollars)
-    CPC::Array{JuMP.Variable,1} # Per capita consumption (thousands 2010 USD per year)
-    I::Array{JuMP.Variable,1} # Investment (trillions 2010 USD per year)
-    S::Array{JuMP.Variable,1} # Gross savings rate as fraction of gross world product
-    RI::Array{JuMP.Variable,1} # Real interest rate (per annum)
-    Y::Array{JuMP.Variable,1} # Gross world product net of abatement and damages (trillions 2010 USD per year)
-    YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2010 USD per year)
-    YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2010 USD per year)
-    DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2010 USD per year)
-    Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
-    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2010 USD per year)
-    MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2010$ per ton CO2)
-    CCA::Array{JuMP.Variable,1} # Cumulative industrial carbon emissions (GTC)
+@extend struct VariablesV2016 <: Variables
     CCATOT::Array{JuMP.Variable,1} # Total carbon emissions (GTC)
-    PERIODU::Array{JuMP.Variable,1} # One period utility function
-    CPRICE::Array{JuMP.Variable,1} # Carbon price (2010$ per ton of CO2)
-    CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
-    UTILITY::JuMP.Variable # Welfare function
 end
 
 #NOTE: CCATOT and the Tₐₜ upper bound is the only difference tho the 2013R models.
-#TODO: Concrete abstractions. See issue #1.
 function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
     # Variables #
     @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound[i]); # Emission control rate GHGs
@@ -275,7 +247,7 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2010$ per ton of CO2)
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
-    VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,CCATOT,PERIODU,CPRICE,CEMUTOTPER,UTILITY)
+    VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,PERIODU,CPRICE,CEMUTOTPER,UTILITY,CCATOT)
 end
 
 struct EquationsV2016 <: Equations
