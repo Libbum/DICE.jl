@@ -83,7 +83,7 @@ end
     Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
     C::Array{JuMP.Variable,1} # Consumption (trillions 2005 US dollars per year)
     K::Array{JuMP.Variable,1} # Capital stock (trillions 2005 US dollars)
-    CPC::Array{JuMP.Variable,1} #  Per capita consumption (thousands 2005 USD per year)
+    CPC::Array{JuMP.Variable,1} # Per capita consumption (thousands 2005 USD per year)
     I::Array{JuMP.Variable,1} # Investment (trillions 2005 USD per year)
     S::Array{JuMP.Variable,1} # Gross savings rate as fraction of gross world product
     RI::Array{JuMP.Variable,1} # Real interest rate (per annum)
@@ -104,4 +104,44 @@ end
 #TODO: Consider extending this to all equations rather than the ones useful for results
 @base type Equations
     eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+end
+
+#NOTE: Monetary units herein are based on differing years depinding on version.
+# For example: v2013R uses 2005 as its base year and v2016R uses 2010.
+# Rule of thumb for these values is that the starting value `Results.years[1]`
+# is the baseline.
+@base type Results
+    years::Array{Int64,1} #Simulation units to true year values
+    Mₐₜ::Array{Float64,1} # Carbon concentration increase in atmosphere (GtC from 1750)
+    Mₐₜppm::Array{Float64,1} # Carbon concentration increase in atmosphere (ppm from 1750)
+    Mᵤₚ::Array{Float64,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
+    Mₗₒ::Array{Float64,1} # Carbon concentration increase in lower oceans (GtC from 1750)
+    CCA::Array{Float64,1} # Cumulative industrial carbon emissions (GTC)
+    CCAratio::Array{Float64,1} # Cumulative industrial emissions ratio to maximum possible
+    Tₐₜ::Array{Float64,1} # Increase temperature of atmosphere (degrees C from 1900)
+    FORC::Array{Float64,1} # Increase in radiative forcing (watts per m2 from 1900)
+    Tₗₒ::Array{Float64,1} # Increase temperatureof lower oceans (degrees C from 1900)
+    YGROSS::Array{Float64,1} # Gross world product GROSS of abatement and damages (trillions USD per year)
+    Ω::Array{Float64,1} # Damages as fraction of gross output
+    DAMAGES::Array{Float64,1} # Damages (trillions USD per year)
+    YNET::Array{Float64,1} # Output net of damages equation (trillions USD per year)
+    Λ::Array{Float64,1} # Cost of emissions reductions  (trillions USD per year)
+    Y::Array{Float64,1} # Gross world product net of abatement and damages (trillions USD per year)
+    E::Array{Float64,1} # Total CO2 emissions (GtCO2 per year)
+    Eind::Array{Float64,1} # Industrial emissions (GtCO2 per year)
+    Σ::Array{Float64,1} #World Emissions Intensity
+    I::Array{Float64,1} # Investment (trillions USD per year)
+    K::Array{Float64,1} # Capital stock (trillions US dollars)
+    MPK::Array{Float64,1} #First Period gross MPK
+    C::Array{Float64,1} # Consumption (trillions US dollars per year)
+    CPC::Array{Float64,1} # Per capita consumption (thousands USD per year)
+    PERIODU::Array{Float64,1} # One period utility function
+    UTILITY::Float64 # Welfare function
+    S::Array{Float64,1} # Gross savings rate as fraction of gross world product
+    co2price::Array{Float64,1} # Carbon Dioxide Price (per t CO2)
+    cprice::Array{Float64,1} # Carbon Price (per t CO2)
+    μ::Array{Float64,1} # Emission control rate GHGs
+    μ_participants::Array{Float64,1} # Emissions Control Rate (participants)
+    RI::Array{Float64,1} # Real interest rate (per annum)
+    scc::Array{Float64,1} # Social Cost of Carbon
 end

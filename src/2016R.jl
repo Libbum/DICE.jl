@@ -333,7 +333,7 @@ function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, par
 end
 
 include("Scenarios2016R.jl")
-include("2016Results.jl")
+include("Results2016R.jl")
 
 function solve(scenario::Scenario, version::V2016R;
     config::OptionsV2016 = options(version),
