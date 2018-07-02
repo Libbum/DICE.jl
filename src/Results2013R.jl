@@ -1,40 +1,7 @@
-struct ResultsV2013 <: Results
-    years::Array{Int64,1}
-    Mₐₜ::Array{Float64,1}
-    Mₐₜppm::Array{Float64,1}
-    Mᵤₚ::Array{Float64,1}
-    Mₗₒ::Array{Float64,1}
-    CCA::Array{Float64,1}
-    CCAratio::Array{Float64,1}
-    Tₐₜ::Array{Float64,1}
-    FORC::Array{Float64,1}
-    Tₗₒ::Array{Float64,1}
-    YGROSS::Array{Float64,1}
-    Ω::Array{Float64,1}
-    DAMAGES::Array{Float64,1}
-    YNET::Array{Float64,1}
-    Λ::Array{Float64,1}
-    MCABATE::Array{Float64,1}
-    Y::Array{Float64,1}
-    E::Array{Float64,1}
-    Eind::Array{Float64,1}
-    Σ::Array{Float64,1} #World Emissions Intensity
-    I::Array{Float64,1}
-    K::Array{Float64,1}
-    MPK::Array{Float64,1} #First Period gross MPK
-    C::Array{Float64,1}
-    CPC::Array{Float64,1}
-    PERIODU::Array{Float64,1}
-    UTILITY::Float64
-    S::Array{Float64,1}
-    co2price::Array{Float64,1}
-    cprice::Array{Float64,1}
-    μ::Array{Float64,1}
-    μ_participants::Array{Float64,1}
-    co2price_avg::Array{Float64,1}
-    RI::Array{Float64,1}
-    CEMUTOTPER::Array{Float64,1}
-    scc::Array{Float64,1}
+@extend struct ResultsV2013 <: Results
+    MCABATE::Array{Float64,1} # Marginal cost of abatement (2005$ per ton CO2)
+    co2price_avg::Array{Float64,1} # Carbon Price (Global Average)
+    CEMUTOTPER::Array{Float64,1} # Period utility
 end
 
 function model_results(model::JuMP.Model, config::Options, params::Parameters, vars::Variables, eqs::Equations)
@@ -82,6 +49,6 @@ function model_results(model::JuMP.Model, config::Options, params::Parameters, v
     else
         -1000.*getdual(eqs.eeq)./getdual(eqs.yy)
     end;
-    ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,MCABATE,
-               Y,E,Eind,Σ,I,K,MPK,C,CPC,PERIODU,UTILITY,S,co2price,cprice,μ,μ_participants,co2price_avg,RI,CEMUTOTPER,scc)
+    ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,
+               Y,E,Eind,Σ,I,K,MPK,C,CPC,PERIODU,UTILITY,S,co2price,cprice,μ,μ_participants,RI,scc,MCABATE,co2price_avg,CEMUTOTPER)
 end

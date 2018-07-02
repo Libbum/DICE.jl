@@ -1,61 +1,11 @@
-immutable RockyRoadOptions <: Options
-    N::Int #Number of years to calculate (from 2010 onwards)
-    tstep::Int #Years per Period
-    α::Float64 #Elasticity of marginal utility of consumption
-    ρ::Float64 #Initial rate of social time preference per year ρ
-    γₑ::Float64 #Capital elasticity in production function
-    pop₀::Int #Initial world population (millions)
-    popadj::Float64 #Growth rate to calibrate to 2050 pop projection
-    popasym::Int #Asymptotic population (millions)
-    δk::Float64 #Depreciation rate on capital (per year)
-    q₀::Float64 #Initial world gross output (trill 2005 USD)
-    k₀::Float64 #Initial capital value (trill 2005 USD)
-    a₀::Float64 #Initial level of total factor productivity
-    ga₀::Float64 #Initial growth rate for TFP per 5 years
-    δₐ::Float64 #Decline rate of TFP per 5 years
-    gσ₁::Float64 #Initial growth of sigma (continuous per year)
-    δσ::Float64 #Decline rate of decarbonization per period
-    eland₀::Float64 #Carbon emissions from land 2010 (GtCO2 per year)
-    deland::Float64 #Decline rate of land emissions (per period)
-    e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
-    μ₀::Float64 #Initial emissions control rate for base case 2010
-    mat₀::Float64 #Initial Concentration in atmosphere 2010 (GtC)
-    mu₀::Float64 #Initial Concentration in upper strata 2010 (GtC)
-    ml₀::Float64 #Initial Concentration in lower strata 2010 (GtC)
-    mateq::Float64 #Equilibrium concentration atmosphere  (GtC)
-    mueq::Float64 #Equilibrium concentration in upper strata (GtC)
-    mleq::Float64 #Equilibrium concentration in lower strata (GtC)
-    ϕ₁₂::Float64 #Carbon cycle transition matrix coefficient
-    ϕ₂₃::Float64 #Carbon cycle transition matrix coefficient
-    t2xco2::Float64 #Equilibrium temp impact (oC per doubling CO2)
-    fₑₓ0::Float64 #2010 forcings of non-CO2 GHG (Wm-2)
-    fₑₓ1::Float64 #2100 forcings of non-CO2 GHG (Wm-2)
-    tocean₀::Float64 #Initial lower stratum temp change (C from 1900)
-    tatm₀::Float64 #Initial atmospheric temp change (C from 1900)
+@extend immutable RockyRoadOptions <: Options
     ξ₁₀::Float64 #Initial Climate equation coefficient for upper level
     ξ₁β::Float64 #Regression slope coef beta (SoA~Equil TSC)
-    ξ₁::Float64 #Climate equation coefficient for upper level
-    ξ₃::Float64 #Transfer coefficient upper to lower stratum
-    ξ₄::Float64 #Transfer coefficient for lower level
-    η::Float64 #Forcings of equilibrium CO2 doubling (Wm-2)
     ψ₁₀::Float64 #Initial damage intercept
     ψ₂₀::Float64 #Initial damage quadratic term
-    ψ₁::Float64 #Damage intercept (Hotelling-No Damages)
-    ψ₂::Float64 #Damage quadratic term (Hotelling-No Damages)
-    ψ₃::Float64 #Damage exponent
-    θ₂::Float64 #Exponent of control cost function
-    pback::Float64 #Cost of backstop 2005$ per tCO2 2010
-    gback::Float64 #Initial cost decline backstop cost per period
-    limμ::Float64 #Upper limit on control rate after 2150
-    tnopol::Float64 #Period before which no emissions controls base
-    cprice₀::Float64 #Initial base carbon price (2005$ per tCO2)
-    gcprice::Float64 #Growth rate of base carbon price per year
     periodfullpart::Float64 #Period at which have full participation
     partfract2010::Float64 #Fraction of emissions under control in 2010
     partfractfull::Float64 #Fraction of emissions under control at full time
-    fosslim::Float64 #Maximum cumulative extraction fossil fuels (GtC)
-    scale1::Float64 #Multiplicative scaling coefficient
-    scale2::Float64 #Additive scaling coefficient
 end
 
 function options(version::V2013R{RockyRoadFlavour};
@@ -116,7 +66,7 @@ function options(version::V2013R{RockyRoadFlavour};
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.016408662, #Multiplicative scaling coefficient
     scale2::Float64 = -3855.106895) #Additive scaling coefficient
-    RockyRoadOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁₀,ξ₁β,ξ₁,ξ₃,ξ₄,η,ψ₁₀,ψ₂₀,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull,fosslim,scale1,scale2)
+    RockyRoadOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,fosslim,scale1,scale2,ξ₁₀,ξ₁β,ψ₁₀,ψ₂₀,periodfullpart,partfract2010,partfractfull)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
@@ -153,34 +103,16 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-immutable RockyRoadParameters <: Parameters
-    ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₃₂::Float64 # Carbon cycle transition matrix coefficient
-    ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
-    σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
-    λ::Float64 # Climate model parameter
-    ξ₁::Float64 # Transient TSC Correction ("Speed of Adjustment Parameter")
+@extend immutable RockyRoadParameters <: Parameters
+    ξ₁::Float64
     ψ₂::JuMP.NonlinearParameter
     α::JuMP.NonlinearParameter
     ρ::JuMP.NonlinearParameter
     optlrsav::JuMP.NonlinearParameter # Optimal savings rate
-    pbacktime::Array{Float64,1} # Backstop price
-    gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
-    Etree::Array{Float64,1} # Emissions from deforestation
-    rr::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
-    cpricebase::Array{Float64,1} # Carbon price in base case
-    L::Array{Float64,1} # Level of population and labor
-    A::Array{Float64,1} # Level of total factor productivity
-    gσ::Array{Float64,1} # Change in sigma (cumulative improvement of energy efficiency)
-    σ::Array{Float64,1} # CO2-equivalent-emissions output ratio
-    θ₁::Array{Float64,1} # Adjusted cost for backstop
-    fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
-    partfract::Array{JuMP.NonlinearParameter,1} # Fraction of emissions in control regime
+    rr::Array{JuMP.NonlinearParameter,1} # Fraction of emissions in control regime
+    partfract::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
 end
 
-#TODO: rr may need to be a parameter too, since it changes in some scenarios.
 function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -262,7 +194,7 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     pfract[1] = c.partfract2010;
     @NLparameter(model, partfract[i=1:c.N] == pfract[i]);
 
-    RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,ξ₁,ψ₂,α,ρ,optlrsav,pbacktime,gₐ,Etree,rr,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,partfract)
+    RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,pbacktime,gₐ,Etree,cpricebase,L,A,gσ,σ,θ₁,fₑₓ,ξ₁,ψ₂,α,ρ,optlrsav,rr,partfract)
 end
 
 #TODO: Consider adding in NLParameter values here
@@ -288,8 +220,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     print(io, "Fraction of emissions in control regieme: $(getvalue(opt.partfract))");
 end
 
-struct RockyRoadEquations <: Equations
-    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+@extend struct RockyRoadEquations <: Equations
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 
