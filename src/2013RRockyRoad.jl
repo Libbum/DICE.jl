@@ -44,7 +44,7 @@ function options(version::V2013R{RockyRoadFlavour};
     tatm₀::Float64 = 0.8, #Initial atmospheric temp change (C from 1900)
     ξ₁₀::Float64 = 0.098, #Initial Climate equation coefficient for upper level
     ξ₁β::Float64 = 0.01243, #Regression slope coef beta (SoA~Equil TSC)
-    ξ₁::Float64 = 0.098, #Climate equation coefficient for upper level #Note, this is a param later?
+    ξ₁::Float64 = 0.098, #Climate equation coefficient for upper level #Note, this is a param we set later
     ξ₃::Float64 = 0.088, #Transfer coefficient upper to lower stratum
     ξ₄::Float64 = 0.025, #Transfer coefficient for lower level
     η::Float64 = 3.8, #Forcings of equilibrium CO2 doubling (Wm-2)

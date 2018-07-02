@@ -255,8 +255,7 @@ end
 end
 
 #TODO: I think we can drop the version requirement here.
-#NOTE: Addition CCATOT, Λ looses partfract term issue #1
-#NOTE: MCABATE and CPRICE are the same in the original...
+#NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
 function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
