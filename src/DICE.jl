@@ -16,7 +16,6 @@ abstract type Version end
 #Configuration options & parameters, model settings and output
 include("BaseTypes.jl")
 
-abstract type Equations end
 abstract type Results end
 
 #Scenarios

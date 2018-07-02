@@ -250,8 +250,7 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,PERIODU,CPRICE,CEMUTOTPER,UTILITY,CCATOT)
 end
 
-struct EquationsV2016 <: Equations
-    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+@extend struct EquationsV2016 <: Equations
     cc::Array{JuMP.ConstraintRef,1} # Output Consumption
 end
 

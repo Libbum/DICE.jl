@@ -197,8 +197,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::VanillaParameters)
     print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
 end
 
-struct VanillaEquations <: Equations
-    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+@extend struct VanillaEquations <: Equations
     cc::Array{JuMP.ConstraintRef,1} # Consumption equation
 end
 

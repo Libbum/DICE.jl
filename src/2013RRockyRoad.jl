@@ -220,8 +220,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     print(io, "Fraction of emissions in control regieme: $(getvalue(opt.partfract))");
 end
 
-struct RockyRoadEquations <: Equations
-    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+@extend struct RockyRoadEquations <: Equations
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 

@@ -100,3 +100,8 @@ end
     CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
     UTILITY::JuMP.Variable # Welfare function
 end
+
+#TODO: Consider extending this to all equations rather than the ones useful for results
+@base type Equations
+    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+end
