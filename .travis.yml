@@ -15,10 +15,9 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - gfortran-8
-      - libstdc++-6-dev
 script:
   - sudo ln -s /usr/bin/gfortran-8 /usr/bin/gfortran
-  - which gfortran
+  - sudo ln -s /usr/lib/libstdc++.so.6 /usr/lib/libstdc++.so
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
