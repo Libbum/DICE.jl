@@ -111,6 +111,13 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
     end
 end
 
+@testset "Utility" begin
+    @testset "2013R (Vanilla)" begin
+        run = solve(BasePrice, v2013R());
+        @test run.results.UTILITY ≈ 2670.2779245830334
+    end
+end
+
 # Optimisation tests.
 # Currently, for some unknown reason, we cannot solve these
 # tests in the travis environment. They become unfeaseable or

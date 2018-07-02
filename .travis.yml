@@ -12,7 +12,7 @@ notifications:
 sudo: false
 addons:
     apt_packages:
-        - gfortran
+        - gfortran-8
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
