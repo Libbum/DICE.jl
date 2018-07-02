@@ -16,8 +16,8 @@ addons:
     packages:
     - gfortran-8
 script:
+  - ln -s /usr/local/bin/gfortran /usr/bin/gfortran-8
   - which gfortran
-  - which gfortran-8
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
 after_success:
