@@ -1,3 +1,6 @@
+# Originaly from https://github.com/tbreloff/ConcreteAbstractions.jl
+# released under MIT. Slightly modified to function with recent Julia versions.
+
 const _base_types = Dict{Symbol, Tuple}()
 
 macro base(typeexpr::Expr)
