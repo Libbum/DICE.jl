@@ -9,10 +9,10 @@ matrix:
     - julia: nightly
 notifications:
   email: true
-sudo: false
-addons:
-    apt_packages:
-        - gfortran-8
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -q
+  - sudo apt-get install fortran-8 -y
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
