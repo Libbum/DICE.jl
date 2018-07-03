@@ -18,6 +18,9 @@ end
 DICE.@extend type ExtendTest <: TestType
     five::T
 end
+
+missing = @macroexpand DICE.@extend type missing <: Missing end
+
 @testset "Abstractions" begin
     @test ExtendTest <: TestType
 
@@ -30,7 +33,7 @@ end
     @test isa(etest.four, Vector{Int})
     @test isa(etest.five, Int)
 
-    @test_throws UndefVarError DICE.extend(:(type missing <: Missing end))
+    @test isa(missing.args..., ErrorException)
 end
 
 # The tests shouldn't need to converge for long times,
