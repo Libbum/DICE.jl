@@ -117,7 +117,7 @@ end
 if get(ENV, "TRAVIS", "false") == "true"
     #For some unknown reason, there's an issue using the DICE defaults on travis,
     #so we set Ipopt defaults there instead.
-    ipopt = IpoptSolver();
+    ipopt = IpoptSolver(print_frequency_iter=500);
     @testset "Utility" begin
         @testset "2013R (Vanilla)" begin
             run = solve(BasePrice, v2013R(), solver = ipopt);
