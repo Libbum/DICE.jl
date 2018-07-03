@@ -8,6 +8,31 @@ else
     using Test
 end
 
+DICE.@base type TestType{T}
+    one
+    two::Int
+    three::T
+    four::Vector{T}
+end
+
+DICE.@extend type ExtendTest <: TestType
+    five::T
+end
+@testset "Abstractions" begin
+    @test ExtendTest <: TestType
+
+    etest = ExtendTest(10,10,10,[10],5)
+    @test isa(etest, ExtendTest{Int})
+    @test fieldnames(etest) == [:one,:two,:three,:four,:five]
+    @test isa(etest.one, Int)
+    @test isa(etest.two, Int)
+    @test isa(etest.three, Int)
+    @test isa(etest.four, Vector{Int})
+    @test isa(etest.five, Int)
+
+    @test_throws UndefVarError DICE.extend(:(type missing <: Missing end))
+end
+
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
 ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
@@ -116,12 +141,13 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
 end
 
 # Optimisation tests.
+base = solve(BasePrice, v2013R(), solver = ipopt);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
-        result = solve(BasePrice, v2013R(), solver = ipopt);
-        @test result.results.UTILITY ≈ 2670.2779245830334
+        @test base.results.UTILITY ≈ 2670.2779245830334
         result = solve(OptimalPrice, v2013R(), solver = ipopt);
         #For some unknown reason, the optimal solution becomes infeasable on travis.
+        # See issue #8.
         if get(ENV, "TRAVIS", "false") == "true"
             @test_broken result.results.UTILITY ≈ 2690.244712873159
         else
@@ -150,4 +176,9 @@ end
         result = solve(OptimalPrice, v2016R(), solver = ipopt);
         @test result.results.UTILITY ≈ 4522.257183520258
     end
+end
+
+#Show model
+@testset "Display" begin
+    @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nMaximization problem with:\n * 731 linear constraints\n * 240 quadratic constraints\n * 479 nonlinear constraints\n * 1561 variables\nSolver is Ipopt"
 end
