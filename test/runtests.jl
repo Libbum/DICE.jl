@@ -121,8 +121,10 @@ if get(ENV, "TRAVIS", "false") == "true"
     solve(BasePrice, v2013R(), solver = ipopt);
     @testset "Utility" begin
         @testset "2013R (Vanilla)" begin
+            println("2013R Vanilla Base Price");
             result = solve(BasePrice, v2013R(), solver = ipopt);
             @test result.results.UTILITY ≈ 2670.2779245830334
+            println("2013R Vanilla Optimal Price");
             result = solve(OptimalPrice, v2013R(), solver = ipopt);
             @test result.results.UTILITY ≈ 2690.244712873159
         end
