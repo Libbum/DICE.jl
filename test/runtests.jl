@@ -1,6 +1,7 @@
 using DICE
 import JuMP
 using Ipopt
+
 @static if VERSION < v"0.7.0-DEV.2005"
     using Base.Test
 else
@@ -120,37 +121,37 @@ end
 end
 
 # Optimisation tests.
-# Currently, for some unknown reason, we cannot solve these
-# tests in the travis environment. They become unfeaseable or
-# hit some type of resource limit.
-if get(ENV, "TRAVIS", "false") == "false"
+if get(ENV, "TRAVIS", "false") == "true"
+    #For some unknown reason, there's an issue using the DICE defaults on travis,
+    #so we set Ipopt defaults there instead.
+    ipopt = IpoptSolver();
     @testset "Utility" begin
         @testset "2013R (Vanilla)" begin
-            run = solve(BasePrice, v2013R());
+            run = solve(BasePrice, v2013R(), solver = ipopt);
             @test run.results.UTILITY ≈ 2670.2779245830334
-            run = solve(OptimalPrice, v2013R());
+            run = solve(OptimalPrice, v2013R(), solver = ipopt);
             @test run.results.UTILITY ≈ 2690.244712873159
         end
         @testset "2013R (RockyRoad)" begin
             #NOTE: None of these values have been verified yet.
             # See issue #3. Have set some to broken to remember this.
-            run = solve(BasePrice, v2013R(RockyRoad));
+            run = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
             @test run.results.UTILITY ≈ 2670.362568216809
-            run = solve(OptimalPrice, v2013R(RockyRoad));
+            run = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
             @test run.results.UTILITY ≈ 2741.230618094657
-            run = solve(Limit2Degrees, v2013R(RockyRoad));
+            run = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
             @test run.results.UTILITY ≈ 2695.487309594252
-            run = solve(Stern, v2013R(RockyRoad));
+            run = solve(Stern, v2013R(RockyRoad), solver = ipopt);
             @test run.results.UTILITY ≈ 124390.42213103821
-            run = solve(SternCalibrated, v2013R(RockyRoad));
+            run = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
             @test_broken run.results.UTILITY ≈ 9001.0
-            run = solve(Copenhagen, v2013R(RockyRoad));
+            run = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
             @test run.results.UTILITY ≈ 2725.414606616763
         end
         @testset "2016R beta" begin
-            run = solve(BasePrice, v2016R());
+            run = solve(BasePrice, v2016R(), solver = ipopt);
             @test run.results.UTILITY ≈ 4493.8420532623495
-            run = solve(OptimalPrice, v2016R());
+            run = solve(OptimalPrice, v2016R(), solver = ipopt);
             @test run.results.UTILITY ≈ 4522.257183520258
         end
     end
