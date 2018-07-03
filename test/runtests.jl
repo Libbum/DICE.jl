@@ -8,9 +8,12 @@ else
     using Test
 end
 
-model = JuMP.Model();
-modelrr = JuMP.Model();
-model2016 = JuMP.Model();
+# The tests shouldn't need to converge for long times,
+# so dump early and fail rather than wasting resouces on failure.
+ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
+model = JuMP.Model(solver = ipopt);
+modelrr = JuMP.Model(solver = ipopt);
+model2016 = JuMP.Model(solver = ipopt);
 vanilla_opt = options(v2013R());
 rr_opt = options(v2013R(RockyRoad));
 v2016_opt = options(v2016R());
@@ -78,25 +81,24 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
             @test all(x->(vanilla_optimal_price[x] ≈ 1000.0), Int(vanilla_opt.tnopol+1):vanilla_opt.N)
         end
         @testset "2013R (Rocky Road)" begin
-            # Needs CPRICE, so requires a successful model result to test.
-            #DICE.assign_scenario(BasePrice, modelrr, rr_opt, rr_params, rr_vars);
-            @test_broken all(isfinite.(JuMP.getupperbound(rr_vars.CPRICE)))
-            #DICE.assign_scenario(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars);
-            @test_broken JuMP.getupperbound(rr_vars.μ[1]) == rr_opt.μ₀
-            #DICE.assign_scenario(Limit2Degrees, modelrr, rr_opt, rr_params, rr_vars);
-            @test_broken JuMP.getupperbound(rr_vars.Tₐₜ[1]) ≈ 2.0
+            DICE.assign_scenario(BasePrice, modelrr, rr_opt, rr_params, rr_vars);
+            @test all(x->isfinite.(JuMP.getupperbound(rr_vars.CPRICE)[x]), 1:Int(rr_opt.tnopol))
+            DICE.assign_scenario(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars);
+            @test JuMP.getupperbound(rr_vars.μ[1]) == rr_opt.μ₀
+            DICE.assign_scenario(Limit2Degrees, modelrr, rr_opt, rr_params, rr_vars);
+            @test JuMP.getupperbound(rr_vars.Tₐₜ[1]) ≈ 2.0
             DICE.assign_scenario(Stern, modelrr, rr_opt, rr_params, rr_vars);
             @test JuMP.getvalue(rr_params.α) ≈ 1.01
-            #DICE.assign_scenario(SternCalibrated, modelrr, rr_opt, rr_params, rr_vars);
-            @test_broken JuMP.getvalue(rr_params.α) ≈ 2.1
+            DICE.assign_scenario(SternCalibrated, modelrr, rr_opt, rr_params, rr_vars);
+            @test JuMP.getvalue(rr_params.α) ≈ 2.1
             DICE.assign_scenario(Copenhagen, modelrr, rr_opt, rr_params, rr_vars);
             @test JuMP.getvalue(rr_params.partfract[2]) ≈ 0.390423082
             @test JuMP.getlowerbound(rr_vars.μ[3]) ≈ 0.110937151
             @test JuMP.getupperbound(rr_vars.μ[3]) ≈ 0.110937151
         end
         @testset "2016R beta" begin
-            #DICE.assign_scenario(BasePrice, model2016, v2016_opt, v2016_params, v2016_vars);
-            @test_broken all(isfinite.(JuMP.getupperbound(v2016_vars.CPRICE)))
+            DICE.assign_scenario(BasePrice, model2016, v2016_opt, v2016_params, v2016_vars);
+            @test all(x->isfinite.(JuMP.getupperbound(v2016_vars.CPRICE)[x]), 1:Int(v2016_opt.tnopol))
             DICE.assign_scenario(OptimalPrice, model2016, v2016_opt, v2016_params, v2016_vars);
             @test JuMP.getupperbound(v2016_vars.μ[1]) == v2016_opt.μ₀
         end
@@ -114,38 +116,38 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
 end
 
 # Optimisation tests.
-if get(ENV, "TRAVIS", "false") == "true"
-    #For some unknown reason, there's an issue using the DICE defaults on travis,
-    #The optimal solution becomes infeasable.
-    ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
-    @testset "Utility" begin
-        @testset "2013R (Vanilla)" begin
-            result = solve(BasePrice, v2013R(), solver = ipopt);
-            @test result.results.UTILITY ≈ 2670.2779245830334
-            result = solve(OptimalPrice, v2013R(), solver = ipopt);
+@testset "Utility" begin
+    @testset "2013R (Vanilla)" begin
+        result = solve(BasePrice, v2013R(), solver = ipopt);
+        @test result.results.UTILITY ≈ 2670.2779245830334
+        result = solve(OptimalPrice, v2013R(), solver = ipopt);
+        #For some unknown reason, the optimal solution becomes infeasable on travis.
+        if get(ENV, "TRAVIS", "false") == "true"
             @test_broken result.results.UTILITY ≈ 2690.244712873159
+        else
+            @test result.results.UTILITY ≈ 2690.244712873159
         end
-        @testset "2013R (RockyRoad)" begin
-            #NOTE: None of these values have been verified yet.
-            # See issue #3. Have set some to broken to remember this.
-            result = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
-            @test result.results.UTILITY ≈ 2670.362568216809
-            result = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
-            @test result.results.UTILITY ≈ 2741.230618094657
-            result = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
-            @test result.results.UTILITY ≈ 2695.487309594252
-            result = solve(Stern, v2013R(RockyRoad), solver = ipopt);
-            @test result.results.UTILITY ≈ 124390.42213103821
-            result = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
-            @test_broken result.results.UTILITY ≈ 9001.0
-            result = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
-            @test result.results.UTILITY ≈ 2725.414606616763
-        end
-        @testset "2016R beta" begin
-            result = solve(BasePrice, v2016R(), solver = ipopt);
-            @test result.results.UTILITY ≈ 4493.8420532623495
-            result = solve(OptimalPrice, v2016R(), solver = ipopt);
-            @test result.results.UTILITY ≈ 4522.257183520258
-        end
+    end
+    @testset "2013R (RockyRoad)" begin
+        #NOTE: None of these values have been verified yet.
+        # See issue #3. Have set some to broken to remember this.
+        result = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
+        @test result.results.UTILITY ≈ 2670.362568216809
+        result = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
+        @test result.results.UTILITY ≈ 2741.230618094657
+        result = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
+        @test result.results.UTILITY ≈ 2695.487309594252
+        result = solve(Stern, v2013R(RockyRoad), solver = ipopt);
+        @test result.results.UTILITY ≈ 124390.42213103821
+        result = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
+        @test_broken result.results.UTILITY ≈ 9001.0
+        result = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
+        @test result.results.UTILITY ≈ 2725.414606616763
+    end
+    @testset "2016R beta" begin
+        result = solve(BasePrice, v2016R(), solver = ipopt);
+        @test result.results.UTILITY ≈ 4493.8420532623495
+        result = solve(OptimalPrice, v2016R(), solver = ipopt);
+        @test result.results.UTILITY ≈ 4522.257183520258
     end
 end
