@@ -116,12 +116,13 @@ end
 # Optimisation tests.
 if get(ENV, "TRAVIS", "false") == "true"
     #For some unknown reason, there's an issue using the DICE defaults on travis,
-    #so we set Ipopt defaults there instead.
+    #but it seems like it's just the first run. So call the solver once first.
     ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
+    run = solve(BasePrice, v2013R(), solver = ipopt);
     @testset "Utility" begin
         @testset "2013R (Vanilla)" begin
-#            run = solve(BasePrice, v2013R(), solver = ipopt);
-#            @test run.results.UTILITY ≈ 2670.2779245830334
+            run = solve(BasePrice, v2013R(), solver = ipopt);
+            @test run.results.UTILITY ≈ 2670.2779245830334
             run = solve(OptimalPrice, v2013R(), solver = ipopt);
             @test run.results.UTILITY ≈ 2690.244712873159
         end
