@@ -78,7 +78,7 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
             @test all(x->(vanilla_optimal_price[x] ≈ 1000.0), Int(vanilla_opt.tnopol+1):vanilla_opt.N)
         end
         @testset "2013R (Rocky Road)" begin
-            # Needs CPRICE, so requires a successful model run to test.
+            # Needs CPRICE, so requires a successful model result to test.
             #DICE.assign_scenario(BasePrice, modelrr, rr_opt, rr_params, rr_vars);
             @test_broken all(isfinite.(JuMP.getupperbound(rr_vars.CPRICE)))
             #DICE.assign_scenario(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars);
@@ -116,37 +116,37 @@ end
 # Optimisation tests.
 if get(ENV, "TRAVIS", "false") == "true"
     #For some unknown reason, there's an issue using the DICE defaults on travis,
-    #but it seems like it's just the first run. So call the solver once first.
+    #but it seems like it's just the first result. So call the solver once first.
     ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
-    run = solve(BasePrice, v2013R(), solver = ipopt);
+    solve(BasePrice, v2013R(), solver = ipopt);
     @testset "Utility" begin
         @testset "2013R (Vanilla)" begin
-            run = solve(BasePrice, v2013R(), solver = ipopt);
-            @test run.results.UTILITY ≈ 2670.2779245830334
-            run = solve(OptimalPrice, v2013R(), solver = ipopt);
-            @test run.results.UTILITY ≈ 2690.244712873159
+            result = solve(BasePrice, v2013R(), solver = ipopt);
+            @test result.results.UTILITY ≈ 2670.2779245830334
+            result = solve(OptimalPrice, v2013R(), solver = ipopt);
+            @test result.results.UTILITY ≈ 2690.244712873159
         end
         @testset "2013R (RockyRoad)" begin
             #NOTE: None of these values have been verified yet.
             # See issue #3. Have set some to broken to remember this.
-            run = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
-            @test run.results.UTILITY ≈ 2670.362568216809
-            run = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
-            @test run.results.UTILITY ≈ 2741.230618094657
-            run = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
-            @test run.results.UTILITY ≈ 2695.487309594252
-            run = solve(Stern, v2013R(RockyRoad), solver = ipopt);
-            @test run.results.UTILITY ≈ 124390.42213103821
-            run = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
-            @test_broken run.results.UTILITY ≈ 9001.0
-            run = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
-            @test run.results.UTILITY ≈ 2725.414606616763
+            result = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
+            @test result.results.UTILITY ≈ 2670.362568216809
+            result = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
+            @test result.results.UTILITY ≈ 2741.230618094657
+            result = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
+            @test result.results.UTILITY ≈ 2695.487309594252
+            result = solve(Stern, v2013R(RockyRoad), solver = ipopt);
+            @test result.results.UTILITY ≈ 124390.42213103821
+            result = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
+            @test_broken result.results.UTILITY ≈ 9001.0
+            result = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
+            @test result.results.UTILITY ≈ 2725.414606616763
         end
         @testset "2016R beta" begin
-            run = solve(BasePrice, v2016R(), solver = ipopt);
-            @test run.results.UTILITY ≈ 4493.8420532623495
-            run = solve(OptimalPrice, v2016R(), solver = ipopt);
-            @test run.results.UTILITY ≈ 4522.257183520258
+            result = solve(BasePrice, v2016R(), solver = ipopt);
+            @test result.results.UTILITY ≈ 4493.8420532623495
+            result = solve(OptimalPrice, v2016R(), solver = ipopt);
+            @test result.results.UTILITY ≈ 4522.257183520258
         end
     end
 end
