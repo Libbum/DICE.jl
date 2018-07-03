@@ -1,5 +1,6 @@
 using DICE
 import JuMP
+using Ipopt
 @static if VERSION < v"0.7.0-DEV.2005"
     using Base.Test
 else
@@ -113,7 +114,7 @@ end
 
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
-        run = solve(BasePrice, v2013R());
+        run = solve(BasePrice, v2013R(), solver = IpoptSolver());
         @test run.results.UTILITY ≈ 2670.2779245830334
     end
 end
