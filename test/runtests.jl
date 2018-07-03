@@ -113,13 +113,6 @@ v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_v
     end
 end
 
-@testset "Utility" begin
-    @testset "2013R (Vanilla)" begin
-        run = solve(BasePrice, v2013R(), solver = IpoptSolver());
-        @test run.results.UTILITY ≈ 2670.2779245830334
-    end
-end
-
 # Optimisation tests.
 if get(ENV, "TRAVIS", "false") == "true"
     #For some unknown reason, there's an issue using the DICE defaults on travis,
