@@ -1,4 +1,13 @@
 @extend immutable VanillaOptions <: Options
+    deland::Float64 #Decline rate of land emissions (per period)
+    e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2010
+    mateq::Float64 #Equilibrium concentration atmosphere  (GtC)
+    mueq::Float64 #Equilibrium concentration in upper strata (GtC)
+    mleq::Float64 #Equilibrium concentration in lower strata (GtC)
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2005$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
     periodfullpart::Float64 #Period at which have full participation
     partfract2010::Float64 #Fraction of emissions under control in 2010
     partfractfull::Float64 #Fraction of emissions under control at full time
@@ -58,7 +67,7 @@ function options(version::V2013R{VanillaFlavour};
     periodfullpart::Float64 = 21.0, #Period at which have full participation
     partfract2010::Float64 = 1.0, #Fraction of emissions under control in 2010
     partfractfull::Float64 = 1.0) #Fraction of emissions under control at full time
-    VanillaOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,fosslim,scale1,scale2,periodfullpart,partfract2010,partfractfull)
+    VanillaOptions(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,mat₀,mu₀,ml₀,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,deland,e₀,μ₀,mateq,mueq,mleq,tnopol,cprice₀,gcprice,periodfullpart,partfract2010,partfractfull)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::VanillaOptions)

@@ -16,15 +16,9 @@
     gσ₁::Float64 #Initial growth of sigma (continuous per year)
     δσ::Float64 #Decline rate of decarbonization per period
     eland₀::Float64 #Carbon emissions from land 2010 (GtCO2 per year)
-    deland::Float64 #Decline rate of land emissions (per period)
-    e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
-    μ₀::Float64 #Initial emissions control rate for base case 2010
     mat₀::Float64 #Initial Concentration in atmosphere 2010 (GtC)
     mu₀::Float64 #Initial Concentration in upper strata 2010 (GtC)
     ml₀::Float64 #Initial Concentration in lower strata 2010 (GtC)
-    mateq::Float64 #Equilibrium concentration atmosphere  (GtC)
-    mueq::Float64 #Equilibrium concentration in upper strata (GtC)
-    mleq::Float64 #Equilibrium concentration in lower strata (GtC)
     ϕ₁₂::Float64 #Carbon cycle transition matrix coefficient
     ϕ₂₃::Float64 #Carbon cycle transition matrix coefficient
     t2xco2::Float64 #Equilibrium temp impact (oC per doubling CO2)
@@ -43,9 +37,6 @@
     pback::Float64 #Cost of backstop 2005$ per tCO2 2010
     gback::Float64 #Initial cost decline backstop cost per period
     limμ::Float64 #Upper limit on control rate after 2150
-    tnopol::Float64 #Period before which no emissions controls base
-    cprice₀::Float64 #Initial base carbon price (2005$ per tCO2)
-    gcprice::Float64 #Growth rate of base carbon price per year
     fosslim::Float64 #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 #Multiplicative scaling coefficient
     scale2::Float64 #Additive scaling coefficient

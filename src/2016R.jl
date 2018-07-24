@@ -21,6 +21,15 @@ end
 export v2016R
 
 @extend immutable OptionsV2016 <: Options
+    deland::Float64 #Decline rate of land emissions (per period)
+    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2015
+    mateq::Float64 #Equilibrium concentration atmosphere  (GtC)
+    mueq::Float64 #Equilibrium concentration in upper strata (GtC)
+    mleq::Float64 #Equilibrium concentration in lower strata (GtC)
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
     ψ₁₀::Float64 #Initial damage intercept
 end
 
@@ -76,7 +85,7 @@ function options(version::V2016R;
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.0302455265681763, #Multiplicative scaling coefficient
     scale2::Float64 = -10993.704) #Additive scaling coefficient
-    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,e₀,μ₀,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,tnopol,cprice₀,gcprice,fosslim,scale1,scale2,ψ₁₀)
+    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,mat₀,mu₀,ml₀,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,deland,e₀,μ₀,mateq,mueq,mleq,tnopol,cprice₀,gcprice,ψ₁₀)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
