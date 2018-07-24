@@ -16,9 +16,13 @@
     gσ₁::Float64 #Initial growth of sigma (continuous per year)
     δσ::Float64 #Decline rate of decarbonization per period
     eland₀::Float64 #Carbon emissions from land 2010 (GtCO2 per year)
+    deland::Float64 #Decline rate of land emissions (per period)
     mat₀::Float64 #Initial Concentration in atmosphere 2010 (GtC)
     mu₀::Float64 #Initial Concentration in upper strata 2010 (GtC)
     ml₀::Float64 #Initial Concentration in lower strata 2010 (GtC)
+    mateq::Float64 #Equilibrium concentration atmosphere  (GtC)
+    mueq::Float64 #Equilibrium concentration in upper strata (GtC)
+    mleq::Float64 #Equilibrium concentration in lower strata (GtC)
     ϕ₁₂::Float64 #Carbon cycle transition matrix coefficient
     ϕ₂₃::Float64 #Carbon cycle transition matrix coefficient
     t2xco2::Float64 #Equilibrium temp impact (oC per doubling CO2)
@@ -50,10 +54,8 @@ end
     ϕ₃₃::Float64 # Carbon cycle transition matrix coefficient
     σ₀::Float64 # Carbon intensity 2010 (kgCO2 per output 2005 USD 2010)
     λ::Float64 # Climate model parameter
-    pbacktime::Array{Float64,1} # Backstop price
     gₐ::Array{Float64,1} # Growth rate of productivity from 0 to N
     Etree::Array{Float64,1} # Emissions from deforestation
-    cpricebase::Array{Float64,1} # Carbon price in base case
     L::Array{Float64,1} # Level of population and labor
     A::Array{Float64,1} # Level of total factor productivity
     gσ::Array{Float64,1} # Change in sigma (cumulative improvement of energy efficiency)
