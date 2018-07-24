@@ -73,7 +73,6 @@ end
     Mᵤₚ::Array{JuMP.Variable,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
     Mₗₒ::Array{JuMP.Variable,1} # Carbon concentration increase in lower oceans (GtC from 1750)
     E::Array{JuMP.Variable,1} # Total CO2 emissions (GtCO2 per year)
-    Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
     C::Array{JuMP.Variable,1} # Consumption (trillions 2005 US dollars per year)
     K::Array{JuMP.Variable,1} # Capital stock (trillions 2005 US dollars)
     CPC::Array{JuMP.Variable,1} # Per capita consumption (thousands 2005 USD per year)
@@ -84,13 +83,9 @@ end
     YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
     YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2005 USD per year)
     DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2005 USD per year)
-    Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
-    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2005 USD per year)
     MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2005$ per ton CO2)
     CCA::Array{JuMP.Variable,1} # Cumulative industrial carbon emissions (GTC)
     PERIODU::Array{JuMP.Variable,1} # One period utility function
-    CPRICE::Array{JuMP.Variable,1} # Carbon price (2005$ per ton of CO2)
-    CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
     UTILITY::JuMP.Variable # Welfare function
 end
 

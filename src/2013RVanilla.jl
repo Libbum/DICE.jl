@@ -208,8 +208,7 @@ end
     cc::Array{JuMP.ConstraintRef,1} # Consumption equation
 end
 
-#TODO: I think we can drop the version requirement here.
-function model_eqs(version::V2013R{VanillaFlavour}, model::JuMP.Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
+function model_eqs(model::JuMP.Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -297,7 +296,7 @@ function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(version, model, config, params, variables);
+    equations = model_eqs(model, config, params, variables);
 
     JuMP.solve(model);
     JuMP.solve(model);

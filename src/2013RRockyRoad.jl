@@ -231,8 +231,7 @@ end
     yy::Array{JuMP.ConstraintRef,1} # Output net equation
 end
 
-#TODO: I think we can drop the version requirement here.
-function model_eqs(version::V2013R{RockyRoadFlavour}, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
@@ -323,7 +322,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(version, model, config, params, variables);
+    equations = model_eqs(model, config, params, variables);
 
     assign_scenario(scenario, model, config, params, variables);
 

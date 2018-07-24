@@ -220,6 +220,11 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
 end
 
 @extend struct VariablesV2016 <: Variables
+    Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
+    Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
+    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2005 USD per year)
+    CPRICE::Array{JuMP.Variable,1} # Carbon price (2005$ per ton of CO2)
+    CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
     CCATOT::Array{JuMP.Variable,1} # Total carbon emissions (GTC)
 end
 
@@ -254,16 +259,15 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2010$ per ton of CO2)
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
-    VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,Eind,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,Ω,Λ,MCABATE,CCA,PERIODU,CPRICE,CEMUTOTPER,UTILITY,CCATOT)
+    VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
 @extend struct EquationsV2016 <: Equations
     cc::Array{JuMP.ConstraintRef,1} # Output Consumption
 end
 
-#TODO: I think we can drop the version requirement here.
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -354,7 +358,7 @@ function solve(scenario::Scenario, version::V2016R;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(version, model, config, params, variables);
+    equations = model_eqs(model, config, params, variables);
 
     assign_scenario(scenario, model, config, params, variables);
 

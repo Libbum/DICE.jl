@@ -187,7 +187,7 @@ function generate_parameters(c::OptionsVCJL, model::JuMP.Model)
                             c.partfract21
                        end;
     end
-    partfract[1] = c.partfract1;
+    partfract[1] = 0.25372; #NOTE: This is overriden in the setup, so partfract1 is never really used...
     ParametersVCJL(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,rr,partfract)
 end
 
@@ -206,4 +206,112 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersVCJL)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     print(io, "Exogenious forcing: $(opt.fₑₓ)");
+end
+
+@extend struct VariablesVCJL <: Variables
+    MₐₜAV::Array{JuMP.Variable,1} # Average concentrations
+    PCY::Array{JuMP.Variable,1} # Per capita income thousands US dollars
+end
+
+function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
+    @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound[i]); # Emission control rate GHGs
+    @variable(model, FORC[1:N]); # Increase in radiative forcing (watts per m2 from 1900)
+    @variable(model, 0.0 <= Tₐₜ[1:N] <= 20.0); # Increase temperature of atmosphere (degrees C from 1900)
+    @variable(model, -1.0 <= Tₗₒ[1:N] <= 20.0); # Increase temperatureof lower oceans (degrees C from 1900)
+    @variable(model, Mₐₜ[1:N] >= 10.0); # Carbon concentration increase in atmosphere (GtC from 1750)
+    @variable(model, Mᵤₚ[1:N] >= 100.0); # Carbon concentration increase in shallow oceans (GtC from 1750)
+    @variable(model, Mₗₒ[1:N] >= 1000.0); # Carbon concentration increase in lower oceans (GtC from 1750)
+    @variable(model, E[1:N] >= 0.0); # Total CO2 emissions (GtCO2 per year)
+    @variable(model, C[1:N] >= 20.0); # Consumption (trillions 2005 US dollars per year)
+    @variable(model, K[1:N] >= 100.0); # Capital stock (trillions 2005 US dollars)
+    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2005 USD per year)
+    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2005 USD per year)
+    @variable(model, S[1:N]); # Gross savings rate as fraction of gross world product
+    @variable(model, RI[1:N]); # Real interest rate (per annum)
+    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2005 USD per year)
+    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
+    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2005 USD per year)
+    @variable(model, DAMAGES[1:N]); # Damages (trillions 2005 USD per year)
+    @variable(model, MCABATE[1:N]); #->ABATECOST Marginal cost of abatement (2005$ per ton CO2)
+    @variable(model, 0.0 <= CCA[1:N] <= cca_ubound); # Cumulative industrial carbon emissions (GTC)
+    @variable(model, PERIODU[1:N]); # One period utility function
+    @variable(model, UTILITY); # Welfare function
+    @variable(model, MₐₜAV[1:N]); # Average concentrations
+    @variable(model, PCY[1:N]); # Per capita income thousands US dollars
+    VariablesVCJL(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,MₐₜAV,PCY)
+end
+
+@extend struct EquationsVCJL <: Equations
+    kk::Array{JuMP.ConstraintRef,1} # Capital balance equation
+end
+
+function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+    N = config.N;
+    # Equations #
+    # Emissions Equation
+    eeq = @constraint(model, [i=1:N], vars.E[i] ==  params.σ[i] * (1-vars.μ[i])*params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ + params.Etree[i]);
+    # Radiative forcing equation
+    @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log((vars.MₐₜAV[i]+.000001)/596.4)/log(2)) + params.fₑₓ[i]);
+    # Average concentrations equation
+    @constraint(model, [i=1:N], vars.MₐₜAV[i] == vars.Mₐₜ);
+    # Output gross equation
+    @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ);
+    # Damage equation
+    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]-(1+config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    # Output net of damages equation
+    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]/(1+config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    # ->ABATECOST Abatement cost
+    @NLconstraint(model, [i=1:N], vars.MCABATE[i] == params.partfract[i]^(1-config.θ₂)*vars.YGROSS[i]*(params.θ₁[i]*(vars.μ[i]^config.θ₂)));
+    # Output net equation
+    @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YGROSS[i]*(1-(params.partfract[i]^(1-config.θ₂))*params.θ₁[i]*(vars.μ[i]^config.θ₂))/(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    # Savings rate equation
+    @constraint(model, [i=1:N], vars.S[i] == vars.I[i]/(0.001 + vars.Y[i]));
+    # Interest rate equation
+    @constraint(model, [i=1:N-1], vars.RI[i] == config.γₑ*vars.Y[i]/vars.K[i]-config.δk);
+    # Consumption equation
+    @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    # Per capita consumption definition
+    @constraint(model, [i=1:N], vars.CPC[i] == vars.C[i] * 1000.0 / params.L[i]);
+    # Per capita income definition
+    @constraint(model, [i=1:N], vars.PCY[i] == vars.Y[i] * 1000.0 / params.L[i]);
+    # Instantaneous utility function equation
+    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]/params.L[i])^(1-config.α)-1)/(1-config.α));
+
+    # Equations (offset) #
+    # Cumulative carbon emissions
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + E[i]);
+    # Capital balance equation
+    kk = @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk) * vars.K[i] + vars.I[i]);
+    # Atmospheric concentration equation
+    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]);
+    # Lower ocean concentration
+    @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
+    # Shallow ocean concentration
+    @constraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
+    # Temperature-climate equation for atmosphere
+    @constraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + config.ξ₁*(vars.FORC[i]-params.λ*vars.Tₐₜ[i]-config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i])));
+    # Temperature-climate equation for lower oceans
+    @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
+
+    # Terminal condition for capital
+    @constraint(model, 0.02*vars.K[end] <= vars.I[end]);
+    # Fix savings assumption for standardization if needed
+    @constraint(model, vars.S[i=1:N] .== 0.22); #NOTE: This kills all savings??
+    # Initial conditions
+    @constraint(model, vars.CCA[1] == 0.0);
+    #First period predetermined by Kyoto Protocol
+    @constraint(model, vars.μ[1] == 0.005);
+    @constraint(model, vars.K[1] == config.k₀);
+    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
+    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
+    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+
+    @constraint(model, vars.UTILITY == sum(params.rr[i]*params.L[i]*vars.PERIODU[i]/config.scale1 for i=1:N) + config.scale2);
+
+    # Objective function
+    @objective(model, Max, vars.UTILITY);
+
+    EquationsVCJL(eeq,kk)
 end
