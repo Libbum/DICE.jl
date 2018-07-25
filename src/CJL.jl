@@ -213,8 +213,8 @@ end
     PCY::Array{JuMP.Variable,1} # Per capita income thousands US dollars
 end
 
-function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
-    @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound[i]); # Emission control rate GHGs
+function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Float64)
+    @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound); # Emission control rate GHGs
     @variable(model, FORC[1:N]); # Increase in radiative forcing (watts per m2 from 1900)
     @variable(model, 0.0 <= Tₐₜ[1:N] <= 20.0); # Increase temperature of atmosphere (degrees C from 1900)
     @variable(model, -1.0 <= Tₗₒ[1:N] <= 20.0); # Increase temperatureof lower oceans (degrees C from 1900)
@@ -249,37 +249,37 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @constraint(model, [i=1:N], vars.E[i] ==  params.σ[i] * (1-vars.μ[i])*params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ + params.Etree[i]);
+    eeq = @NLconstraint(model, [i=1:N], vars.E[i] ==  params.σ[i] * (1-vars.μ[i])*params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ + params.Etree[i]);
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log((vars.MₐₜAV[i]+.000001)/596.4)/log(2)) + params.fₑₓ[i]);
     # Average concentrations equation
-    @constraint(model, [i=1:N], vars.MₐₜAV[i] == vars.Mₐₜ);
+    @constraint(model, [i=1:N], vars.MₐₜAV[i] == vars.Mₐₜ[i]);
     # Output gross equation
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Damage equation
-    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]-(1+config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]-(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
     # Output net of damages equation
-    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]/(1+config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]/(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
     # ->ABATECOST Abatement cost
     @NLconstraint(model, [i=1:N], vars.MCABATE[i] == params.partfract[i]^(1-config.θ₂)*vars.YGROSS[i]*(params.θ₁[i]*(vars.μ[i]^config.θ₂)));
     # Output net equation
     @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YGROSS[i]*(1-(params.partfract[i]^(1-config.θ₂))*params.θ₁[i]*(vars.μ[i]^config.θ₂))/(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
     # Savings rate equation
-    @constraint(model, [i=1:N], vars.S[i] == vars.I[i]/(0.001 + vars.Y[i]));
+    @NLconstraint(model, [i=1:N], vars.S[i] == vars.I[i]/(0.001 + vars.Y[i]));
     # Interest rate equation
-    @constraint(model, [i=1:N-1], vars.RI[i] == config.γₑ*vars.Y[i]/vars.K[i]-config.δk);
+    @NLconstraint(model, [i=1:N], vars.RI[i] == config.γₑ*vars.Y[i]/vars.K[i]-config.δk);
     # Consumption equation
     @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], vars.CPC[i] == vars.C[i] * 1000.0 / params.L[i]);
+    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Per capita income definition
-    @constraint(model, [i=1:N], vars.PCY[i] == vars.Y[i] * 1000.0 / params.L[i]);
+    @constraint(model, [i=1:N], vars.PCY[i] == 1000.0 * vars.Y[i] / params.L[i]);
     # Instantaneous utility function equation
     @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]/params.L[i])^(1-config.α)-1)/(1-config.α));
 
     # Equations (offset) #
     # Cumulative carbon emissions
-    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + E[i]);
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.E[i]);
     # Capital balance equation
     kk = @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk) * vars.K[i] + vars.I[i]);
     # Atmospheric concentration equation
@@ -314,4 +314,82 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     @objective(model, Max, vars.UTILITY);
 
     EquationsVCJL(eeq,kk)
+end
+
+# Just put the default into OptimalPrice for the moment.
+function assign_scenario(s::OptimalPriceScenario, model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+end
+
+function assign_scenario(s::Scenario, model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+    error("$(s) is not a valid scenario for DICE-CJL");
+end
+
+@extend struct ResultsVCJL <: Results
+    MCABATE::Array{Float64,1} # Marginal cost of abatement (2005$ per ton CO2)
+    MₐₜAV::Array{Float64,1} # Average concentrations
+    PCY::Array{Float64,1} # Per capita income thousands US dollars
+    mcemis::Array{Float64,1} #Unsure: TODO
+end
+
+function model_results(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL, eqs::EquationsVCJL)
+    years = 2005+(1:config.N); # TODO: check this
+    Mₐₜ = getvalue(vars.Mₐₜ);
+    MₐₜAV = getvalue(vars.MₐₜAV);
+    Mₐₜppm = getvalue(vars.Mₐₜ)/2.13;
+    Mᵤₚ = getvalue(vars.Mᵤₚ);
+    Mₗₒ = getvalue(vars.Mₗₒ);
+    CCA = getvalue(vars.CCA);
+    CCAratio = getvalue(vars.CCA)/config.fosslim;
+    Tₐₜ = getvalue(vars.Tₐₜ);
+    FORC = getvalue(vars.FORC);
+    Tₗₒ = getvalue(vars.Tₗₒ);
+    YGROSS = getvalue(vars.YGROSS);
+    DAMAGES = getvalue(vars.DAMAGES);
+    YNET = getvalue(vars.YNET);
+    MCABATE = getvalue(vars.MCABATE);
+    Y = getvalue(vars.Y);
+    E = getvalue(vars.E);
+    I = getvalue(vars.I);
+    K = getvalue(vars.K);
+    PCY = getvalue(vars.PCY)
+    MPK = config.γₑ.*YGROSS./K;
+    C = getvalue(vars.C);
+    CPC = getvalue(vars.CPC);
+    PERIODU = getvalue(vars.PERIODU);
+    UTILITY = getvalue(vars.UTILITY);
+    S = getvalue(vars.S);
+    μ = getvalue(vars.μ);
+    RI = getvalue(vars.RI);
+    scc = -1000.*getdual(eqs.eeq)./(getdual(eqs.kk)+.00000000001);
+    mcemis = config.θ₂.*params.θ₁.*μ.^(config.θ₂-1)./params.σ.*1000.;
+    ResultsVCJL(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
+               Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,MCABATE,MₐₜAV,PCY,mcemis)
+end
+
+
+
+function solve(scenario::Scenario, version::VCJL;
+    config::OptionsVCJL = options(version),
+    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+
+    model = JuMP.Model(solver = solver);
+
+    params = generate_parameters(config, model);
+
+    variables = model_vars(version, model, config.N, config.fosslim, config.limμ);
+
+    assign_scenario(scenario, model, config, params, variables);
+
+    equations = model_eqs(model, config, params, variables);
+
+    JuMP.solve(model);
+    #JuMP.solve(model);
+    #JuMP.solve(model);
+    #JuMP.solve(model);
+    #JuMP.solve(model);
+    #JuMP.solve(model);
+
+    results = model_results(model, config, params, variables, equations);
+
+    DICENarrative(config,params,model,scenario,version,variables,equations,results)
 end

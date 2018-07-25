@@ -29,9 +29,10 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 **In testing phase**
 - v2013R (Rocky Road Version)
 
+- DICE-CJL
+
 **Planned**
 - v2016R2 (see [this](https://github.com/Libbum/DICE.jl/issues/4) issue)
-- DICE-CJL
 -  van der Ploeg safe carbon budget
 
 Suggestions and additions welcomed.

@@ -1,4 +1,11 @@
 @extend struct ResultsV2013 <: Results
+    Eind::Array{Float64,1} # Industrial emissions (GtCO2 per year)
+    Σ::Array{Float64,1} #World Emissions Intensity
+    Ω::Array{Float64,1} # Damages as fraction of gross output
+    Λ::Array{Float64,1} # Cost of emissions reductions  (trillions USD per year)
+    co2price::Array{Float64,1} # Carbon Dioxide Price (per t CO2)
+    cprice::Array{Float64,1} # Carbon Price (per t CO2)
+    μ_participants::Array{Float64,1} # Emissions Control Rate (participants)
     MCABATE::Array{Float64,1} # Marginal cost of abatement (2005$ per ton CO2)
     co2price_avg::Array{Float64,1} # Carbon Price (Global Average)
     CEMUTOTPER::Array{Float64,1} # Period utility
@@ -49,6 +56,6 @@ function model_results(model::JuMP.Model, config::Options, params::Parameters, v
     else
         -1000.*getdual(eqs.eeq)./getdual(eqs.yy)
     end;
-    ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,
-               Y,E,Eind,Σ,I,K,MPK,C,CPC,PERIODU,UTILITY,S,co2price,cprice,μ,μ_participants,RI,scc,MCABATE,co2price_avg,CEMUTOTPER)
+    ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
+               Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,Eind,Σ,Ω,Λ,co2price,cprice,μ_participants,MCABATE,co2price_avg,CEMUTOTPER)
 end

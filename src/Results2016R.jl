@@ -1,4 +1,11 @@
 @extend struct ResultsV2016 <: Results
+    Eind::Array{Float64,1} # Industrial emissions (GtCO2 per year)
+    Σ::Array{Float64,1} #World Emissions Intensity
+    Ω::Array{Float64,1} # Damages as fraction of gross output
+    Λ::Array{Float64,1} # Cost of emissions reductions  (trillions USD per year)
+    co2price::Array{Float64,1} # Carbon Dioxide Price (per t CO2)
+    cprice::Array{Float64,1} # Carbon Price (per t CO2)
+    μ_participants::Array{Float64,1} # Emissions Control Rate (participants)
     CCATOT::Array{Float64,1} # Cumulative total emissions
     atfrac::Array{Float64,1} # Atmospheric fraction since 1850
     atfrac2010::Array{Float64,1} # Atmospheric fraction since 2010
@@ -41,6 +48,6 @@ function model_results(model::JuMP.Model, config::OptionsV2016, params::Paramete
     scc = -1000.*getdual(eqs.eeq)./(.00001+getdual(eqs.cc));
     atfrac = (Mₐₜ-588)./(CCATOT+.000001);
     atfrac2010 = (Mₐₜ-config.mat₀)./(.00001+CCATOT-CCATOT[1]);
-    ResultsV2016(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,Ω,DAMAGES,YNET,Λ,
-               Y,E,Eind,Σ,I,K,MPK,C,CPC,PERIODU,UTILITY,S,co2price,cprice,μ,μ_participants,RI,scc,CCATOT,atfrac,atfrac2010)
+    ResultsV2016(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
+               Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,Eind,Σ,Ω,Λ,co2price,cprice,μ_participants,CCATOT,atfrac,atfrac2010)
 end

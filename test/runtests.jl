@@ -82,11 +82,11 @@ end
 vanilla_vars = DICE.model_vars(v2013R(), model, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, vanilla_params.cpricebase);
 rr_vars = DICE.model_vars(v2013R(RockyRoad), modelrr, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, fill(Inf, vanilla_opt.N));
 
-vanilla_eqs = DICE.model_eqs(v2013R(), model, vanilla_opt, vanilla_params, vanilla_vars);
-rr_eqs = DICE.model_eqs(v2013R(RockyRoad), modelrr, rr_opt, rr_params, rr_vars);
+vanilla_eqs = DICE.model_eqs(model, vanilla_opt, vanilla_params, vanilla_vars);
+rr_eqs = DICE.model_eqs(modelrr, rr_opt, rr_params, rr_vars);
 
 v2016_vars = DICE.model_vars(v2016R(), model2016, v2016_opt.N, v2016_opt.fosslim, [if t < 30 1.0 else v2016_opt.limμ end for t in 1:v2016_opt.N], fill(Inf, v2016_opt.N));
-v2016_eqs = DICE.model_eqs(v2016R(), model2016, v2016_opt, v2016_params, v2016_vars);
+v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
 @testset "Model Construction" begin
     @testset "Variables" begin
         @test typeof(vanilla_vars) <: DICE.VariablesV2013

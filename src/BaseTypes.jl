@@ -110,14 +110,10 @@ end
     FORC::Array{Float64,1} # Increase in radiative forcing (watts per m2 from 1900)
     Tₗₒ::Array{Float64,1} # Increase temperatureof lower oceans (degrees C from 1900)
     YGROSS::Array{Float64,1} # Gross world product GROSS of abatement and damages (trillions USD per year)
-    Ω::Array{Float64,1} # Damages as fraction of gross output
     DAMAGES::Array{Float64,1} # Damages (trillions USD per year)
     YNET::Array{Float64,1} # Output net of damages equation (trillions USD per year)
-    Λ::Array{Float64,1} # Cost of emissions reductions  (trillions USD per year)
     Y::Array{Float64,1} # Gross world product net of abatement and damages (trillions USD per year)
     E::Array{Float64,1} # Total CO2 emissions (GtCO2 per year)
-    Eind::Array{Float64,1} # Industrial emissions (GtCO2 per year)
-    Σ::Array{Float64,1} #World Emissions Intensity
     I::Array{Float64,1} # Investment (trillions USD per year)
     K::Array{Float64,1} # Capital stock (trillions US dollars)
     MPK::Array{Float64,1} #First Period gross MPK
@@ -126,10 +122,7 @@ end
     PERIODU::Array{Float64,1} # One period utility function
     UTILITY::Float64 # Welfare function
     S::Array{Float64,1} # Gross savings rate as fraction of gross world product
-    co2price::Array{Float64,1} # Carbon Dioxide Price (per t CO2)
-    cprice::Array{Float64,1} # Carbon Price (per t CO2)
     μ::Array{Float64,1} # Emission control rate GHGs
-    μ_participants::Array{Float64,1} # Emissions Control Rate (participants)
     RI::Array{Float64,1} # Real interest rate (per annum)
     scc::Array{Float64,1} # Social Cost of Carbon
 end
