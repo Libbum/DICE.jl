@@ -31,7 +31,7 @@ end
 
 function options(version::VCJL;
     N::Int = 600, #Number of years to calculate (from 2005 onwards)
-    tstep::Int = 1, #Years per Period
+    tstep::Int = 1, #Years per Period (UNUSED IN CJL)
     α::Float64 = 2.0, #Elasticity of marginal utility of consumption
     ρ::Float64 = 0.015, #Initial rate of social time preference per year
     γₑ::Float64 = 0.3, #Capital elasticity in production function
@@ -44,8 +44,8 @@ function options(version::VCJL;
     a₀::Float64 = 0.02722, #Initial level of total factor productivity
     ga₀::Float64 = 0.092, #Initial growth rate for TFP per year
     δₐ::Float64 = 0.001, #Decline rate of TFP per year
-    gσ₁::Float64 = -.00730, #Initial growth of sigma (continuous per year)
-    δσ::Float64 = -0.003, #Decline rate of decarbonization per period
+    gσ₁::Float64 = -0.00730, #Initial growth of sigma (continuous per year)
+    δσ::Float64 = 0.003, #Decline rate of decarbonization per period
     eland₀::Float64 = 1.1, #Carbon emissions from land 2005 (GtCO2 per year)
     deland::Float64 = 0.01, #Decline rate of land emissions (per period)
     mat₀::Float64 = 808.9, #Initial Concentration in atmosphere 2005 (GtC)
@@ -60,10 +60,10 @@ function options(version::VCJL;
     fₑₓ0::Float64 = -0.06, #2000 forcings of non-CO2 GHG (Wm-2)
     fₑₓ1::Float64 = 0.3, #2000 forcings of non-CO2 GHG (Wm-2)
     tocean₀::Float64 = 0.0068, #2000 lower stratum temp change (C from 1900)
-    tatm₀::Float64 = .7307, #2000 atmospheric temp change (C from 1900)
-    ξ₁::Float64 = .0220, #Climate equation coefficient for upper level
-    ξ₃::Float64 = .3, #Transfer coefficient upper to lower stratum
-    ξ₄::Float64 = .005, #Transfer coefficient for lower level
+    tatm₀::Float64 = 0.7307, #2000 atmospheric temp change (C from 1900)
+    ξ₁::Float64 = 0.0220, #Climate equation coefficient for upper level
+    ξ₃::Float64 = 0.3, #Transfer coefficient upper to lower stratum
+    ξ₄::Float64 = 0.005, #Transfer coefficient for lower level
     η::Float64 = 3.8, #Forcings of equilibrium CO2 doubling (Wm-2)
     ψ₁::Float64 = 0.0, #Damage intercept
     ψ₂::Float64 = 0.0028388, #Damage quadratic term
@@ -76,7 +76,7 @@ function options(version::VCJL;
     scale1::Float64 = 194., #Multiplicative scaling coefficient
     scale2::Float64 = 381800., #Additive scaling coefficient
     δσ₂::Float64 = 0.0, #Quadratic term in decarbonization
-    σ₀::Float64 = .13418, #CO₂-equivalent emissions-GNP ratio 2005
+    σ₀::Float64 = 0.13418, #CO₂-equivalent emissions-GNP ratio 2005
     backrat::Float64 = 2.0, #atio initial to final backstop cost
     partfract1::Float64 = 1.0, #Fraction of emissions under control regime 2005
     partfract2::Float64 = 1.0, #Fraction of emissions under control regime 2015
@@ -86,22 +86,21 @@ function options(version::VCJL;
     OptionsVCJL(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,δσ₂,σ₀,backrat,partfract1,partfract2,partfract21,dpartfract)
 end
 
-#TODO: Not completely finished
 function Base.show(io::IO, ::MIME"text/plain", opt::OptionsVCJL)
     println(io, "Options for DICE-CJL");
-    println(io, "Time step");
-    println(io, "N: $(opt.N), tstep: $(opt.tstep)");
+    println(io, "N: $(opt.N)");
     println(io, "Preferences");
     println(io, "α: $(opt.α), ρ: $(opt.ρ)");
     println(io, "Population and Technology");
     println(io, "γₑ: $(opt.γₑ), pop₀: $(opt.pop₀), popadj: $(opt.popadj), popasym: $(opt.popasym), δk: $(opt.δk)");
     println(io, "q₀: $(opt.q₀), k₀: $(opt.k₀), a₀: $(opt.a₀), ga₀: $(opt.ga₀), δₐ: $(opt.δₐ)");
     println(io, "Emissions Parameters");
-    println(io, "gσ₁: $(opt.gσ₁), δσ: $(opt.δσ), eland₀: $(opt.eland₀)");
+    println(io, "σ₀: $(opt.σ₀), gσ₁: $(opt.gσ₁), δσ: $(opt.δσ), δσ₂: $(opt.δσ₂), eland₀: $(opt.eland₀)");
     println(io, "Carbon Cycle");
     println(io, "mat₀: $(opt.mat₀), mu₀: $(opt.mu₀), ml₀: $(opt.ml₀)");
+    println(io, "mateq: $(opt.mateq), mueq: $(opt.mueq), mleq: $(opt.mleq)");
     println(io, "Flow Parameters");
-    println(io, "ϕ₁₂: $(opt.ϕ₁₂), ϕ₂₃: $(opt.ϕ₂₃)"); #TODO: Fill this in.
+    println(io, "ϕ₁₂: $(opt.ϕ₁₂), ϕ₂₃: $(opt.ϕ₂₃)");
     println(io, "Climate Model Parameters");
     println(io, "t2xco2: $(opt.t2xco2), fₑₓ0: $(opt.fₑₓ0), fₑₓ1: $(opt.fₑₓ1)");
     println(io, "tocean₀: $(opt.tocean₀), tatm₀: $(opt.tatm₀), ξ₁: $(opt.ξ₁)");
@@ -109,11 +108,13 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsVCJL)
     println(io, "Climate Damage Parameters");
     println(io, "ψ₁: $(opt.ψ₁), ψ₂: $(opt.ψ₂), ψ₃: $(opt.ψ₃)");
     println(io, "Abatement Cost");
-    println(io, "θ₂: $(opt.θ₂), pback: $(opt.pback), gback: $(opt.gback), limμ: $(opt.limμ)");
+    println(io, "θ₂: $(opt.θ₂), pback: $(opt.pback), gback: $(opt.gback), backrat: $(opt.backrat), limμ: $(opt.limμ)");
     println(io, "Fossil Fuel Availability");
     println(io, "fosslim: $(opt.fosslim)");
     println(io, "Scaling Parameters");
-    print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
+    println(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
+    println(io, "Emissions control");
+    print(io, "partfract1: $(opt.partfract1), partfract2: $(opt.partfract2), partfract21: $(opt.partfract21), dpartfract: $(opt.dpartfract)");
 end
 
 
@@ -122,7 +123,7 @@ end
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
-function generate_parameters(c::OptionsVCJL, model::JuMP.Model)
+function generate_parameters(c::OptionsVCJL)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.mateq*c.ϕ₁₂/c.mueq; # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
@@ -202,10 +203,11 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersVCJL)
     println(io, "Avg utility social discout rate: $(opt.rr)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
-    println(io, "Δσ: $(opt.gσ)");
-    println(io, "σ: $(opt.σ)");
-    println(io, "θ₁: $(opt.θ₁)");
-    print(io, "Exogenious forcing: $(opt.fₑₓ)");
+    println(io, "Cumulative improvement of energy efficiency: $(opt.gσ)");
+    println(io, "CO₂-equivalent-emissions output ratio: $(opt.σ)");
+    println(io, "Adjusted cost for backstop: $(opt.θ₁)");
+    println(io, "Exogenious forcing: $(opt.fₑₓ)");
+    print(io, "Fraction of emissions in control regime: $(opt.partfract)");
 end
 
 @extend struct VariablesVCJL <: Variables
@@ -236,7 +238,7 @@ function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Floa
     @variable(model, 0.0 <= CCA[1:N] <= cca_ubound); # Cumulative industrial carbon emissions (GTC)
     @variable(model, PERIODU[1:N]); # One period utility function
     @variable(model, UTILITY); # Welfare function
-    @variable(model, MₐₜAV[1:N]); # Average concentrations
+    @variable(model, MₐₜAV[1:N] >= 0.0); # Average concentrations
     @variable(model, PCY[1:N]); # Per capita income thousands US dollars
     VariablesVCJL(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,MₐₜAV,PCY)
 end
@@ -249,7 +251,7 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @NLconstraint(model, [i=1:N], vars.E[i] ==  params.σ[i] * (1-vars.μ[i])*params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ + params.Etree[i]);
+    eeq = @NLconstraint(model, [i=1:N], vars.E[i] == params.σ[i] * (1-vars.μ[i])*params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ + params.Etree[i]);
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log((vars.MₐₜAV[i]+.000001)/596.4)/log(2)) + params.fₑₓ[i]);
     # Average concentrations equation
@@ -257,7 +259,7 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     # Output gross equation
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*params.L[i]^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Damage equation
-    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]-(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
+    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]-vars.YGROSS[i]/(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
     # Output net of damages equation
     @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]/(1+config.ψ₁*vars.Tₐₜ[i]+config.ψ₂*vars.Tₐₜ[i]^config.ψ₃));
     # ->ABATECOST Abatement cost
@@ -271,9 +273,9 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     # Consumption equation
     @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    @constraint(model, [i=1:N], vars.CPC[i] == vars.C[i] * 1000.0 / params.L[i]);
     # Per capita income definition
-    @constraint(model, [i=1:N], vars.PCY[i] == 1000.0 * vars.Y[i] / params.L[i]);
+    @constraint(model, [i=1:N], vars.PCY[i] == vars.Y[i] * 1000.0 / params.L[i]);
     # Instantaneous utility function equation
     @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]/params.L[i])^(1-config.α)-1)/(1-config.α));
 
@@ -296,17 +298,17 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
     # Terminal condition for capital
     @constraint(model, 0.02*vars.K[end] <= vars.I[end]);
     # Fix savings assumption for standardization if needed
-    @constraint(model, vars.S[i=1:N] .== 0.22); #NOTE: This kills all savings??
+    #@constraint(model, vars.S[i=1:N] .== 0.22); #NOTE: This kills all savings??
     # Initial conditions
     @constraint(model, vars.CCA[1] == 0.0);
-    #First period predetermined by Kyoto Protocol
-    @constraint(model, vars.μ[1] == 0.005);
     @constraint(model, vars.K[1] == config.k₀);
     @constraint(model, vars.Mₐₜ[1] == config.mat₀);
     @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
     @constraint(model, vars.Mₗₒ[1] == config.ml₀);
     @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
     @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    #First period predetermined by Kyoto Protocol
+    @constraint(model, vars.μ[1] == 0.005);
 
     @constraint(model, vars.UTILITY == sum(params.rr[i]*params.L[i]*vars.PERIODU[i]/config.scale1 for i=1:N) + config.scale2);
 
@@ -370,11 +372,11 @@ end
 
 function solve(scenario::Scenario, version::VCJL;
     config::OptionsVCJL = options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+    solver = IpoptSolver(print_level=5, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     model = JuMP.Model(solver = solver);
 
-    params = generate_parameters(config, model);
+    params = generate_parameters(config);
 
     variables = model_vars(version, model, config.N, config.fosslim, config.limμ);
 
@@ -389,7 +391,8 @@ function solve(scenario::Scenario, version::VCJL;
     #JuMP.solve(model);
     #JuMP.solve(model);
 
-    results = model_results(model, config, params, variables, equations);
+    #results = model_results(model, config, params, variables, equations);
 
-    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+    #DICENarrative(config,params,model,scenario,version,variables,equations,results)
+    println("Done");
 end
