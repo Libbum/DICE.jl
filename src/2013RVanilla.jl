@@ -1,4 +1,4 @@
-@extend immutable VanillaOptions <: Options
+@extend struct VanillaOptions <: Options
     e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
     μ₀::Float64 #Initial emissions control rate for base case 2010
     tnopol::Float64 #Period before which no emissions controls base
@@ -100,7 +100,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::VanillaOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-@extend immutable VanillaParameters <: Parameters
+@extend struct VanillaParameters <: Parameters
     pbacktime::Array{Float64,1} # Backstop price
     cpricebase::Array{Float64,1} # Carbon price in base case
     rr::Array{Float64,1} # Average utility social discount rate
@@ -119,15 +119,15 @@ function generate_parameters(c::VanillaOptions)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
 
     # Backstop price
-    pbacktime = Array{Float64}(c.N);
+    pbacktime = Array{Float64}(undef, c.N);
     # Growth rate of productivity from 0 to N
-    gₐ = Array{Float64}(c.N);
+    gₐ = Array{Float64}(undef, c.N);
     # Emissions from deforestation
-    Etree = Array{Float64}(c.N);
+    Etree = Array{Float64}(undef, c.N);
     # Average utility social discount rate
-    rr = Array{Float64}(c.N);
+    rr = Array{Float64}(undef, c.N);
     # Carbon price in base case
-    cpricebase = Array{Float64}(c.N);
+    cpricebase = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
@@ -139,16 +139,16 @@ function generate_parameters(c::VanillaOptions)
 
     # Initial conditions and offset required
     # Level of population and labor
-    L = Array{Float64}(c.N);
+    L = Array{Float64}(undef, c.N);
     L[1] = c.pop₀;
     # Level of total factor productivity
-    A = Array{Float64}(c.N);
+    A = Array{Float64}(undef, c.N);
     A[1] = c.a₀;
     # Change in sigma (cumulative improvement of energy efficiency)
-    gσ = Array{Float64}(c.N);
+    gσ = Array{Float64}(undef, c.N);
     gσ[1] = c.gσ₁;
     # CO2-equivalent-emissions output ratio
-    σ = Array{Float64}(c.N);
+    σ = Array{Float64}(undef, c.N);
     σ[1] = σ₀;
 
 
@@ -160,11 +160,11 @@ function generate_parameters(c::VanillaOptions)
     end
 
     # Adjusted cost for backstop
-    θ₁ = Array{Float64}(c.N);
+    θ₁ = Array{Float64}(undef, c.N);
     # Exogenous forcing for other greenhouse gases
-    fₑₓ = Array{Float64}(c.N);
+    fₑₓ = Array{Float64}(undef, c.N);
     # Fraction of emissions in control regime
-    partfract = Array{Float64}(c.N);
+    partfract = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;

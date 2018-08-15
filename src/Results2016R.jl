@@ -45,7 +45,7 @@ function model_results(model::JuMP.Model, config::OptionsV2016, params::Paramete
     μ = getvalue(vars.μ);
     μ_participants = (co2price./params.pbacktime).^(1/(config.θ₂-1));
     RI = getvalue(vars.RI);
-    scc = -1000.*getdual(eqs.eeq)./(.00001+getdual(eqs.cc));
+    scc = -1000.0*getdual(eqs.eeq)./(.00001+getdual(eqs.cc));
     atfrac = (Mₐₜ-588)./(CCATOT+.000001);
     atfrac2010 = (Mₐₜ-config.mat₀)./(.00001+CCATOT-CCATOT[1]);
     ResultsV2016(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,

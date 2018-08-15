@@ -52,9 +52,9 @@ function model_results(model::JuMP.Model, config::Options, params::Parameters, v
     RI = getvalue(vars.RI);
     CEMUTOTPER = getvalue(vars.CEMUTOTPER);
     scc = if typeof(eqs) <: VanillaEquations
-        -1000.*getdual(eqs.eeq)./getdual(eqs.cc)
+        -1000.0*getdual(eqs.eeq)./getdual(eqs.cc)
     else
-        -1000.*getdual(eqs.eeq)./getdual(eqs.yy)
+        -1000.0*getdual(eqs.eeq)./getdual(eqs.yy)
     end;
     ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,Eind,Σ,Ω,Λ,co2price,cprice,μ_participants,MCABATE,co2price_avg,CEMUTOTPER)

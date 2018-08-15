@@ -32,14 +32,14 @@ function assign_scenario(s::SternScenario, model::JuMP.Model, config::RockyRoadO
     setvalue(params.α, 1.01);
     setvalue(params.ρ, 0.001);
     setvalue(params.optlrsav, (config.δk + .004)/(config.δk + .004*1.01 + 0.001)*config.γₑ);
-    setvalue(params.rr[i=1:config.N], 1./((1+0.001).^(config.tstep*(i-1))));
+    setvalue(params.rr[i=1:config.N], 1.0/((1+0.001).^(config.tstep*(i-1))));
 end
 
 function assign_scenario(s::SternCalibratedScenario, model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
     setvalue(params.α, 2.1);
     setvalue(params.ρ, 0.001);
     setvalue(params.optlrsav, (config.δk + .004)/(config.δk + .004*2.1 + 0.001)*config.γₑ);
-    setvalue(params.rr[i=1:config.N], 1./((1+0.001).^(config.tstep*(i-1))));
+    setvalue(params.rr[i=1:config.N], 1.0/((1+0.001).^(config.tstep*(i-1))));
 
     for i in 1:config.N
         setlowerbound(vars.μ[i], 0.01);

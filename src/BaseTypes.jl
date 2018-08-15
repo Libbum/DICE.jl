@@ -1,4 +1,4 @@
-@base type Options
+@base mutable struct Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
@@ -46,7 +46,7 @@
     scale2::Float64 #Additive scaling coefficient
 end
 
-@base type Parameters
+@base mutable struct Parameters
     ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
@@ -64,7 +64,7 @@ end
     fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
 end
 
-@base type Variables
+@base mutable struct Variables
     μ::Array{JuMP.Variable,1} # Emission control rate GHGs
     FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
     Tₐₜ::Array{JuMP.Variable,1} # Increase temperature of atmosphere (degrees C from 1900)
@@ -90,7 +90,7 @@ end
 end
 
 #TODO: Consider extending this to all equations rather than the ones useful for results
-@base type Equations
+@base mutable struct Equations
     eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
 end
 
@@ -98,7 +98,7 @@ end
 # For example: v2013R uses 2005 as its base year and v2016R uses 2010.
 # Rule of thumb for these values is that the starting value `Results.years[1]`
 # is the baseline.
-@base type Results
+@base mutable struct Results
     years::Array{Int64,1} #Simulation units to true year values
     Mₐₜ::Array{Float64,1} # Carbon concentration increase in atmosphere (GtC from 1750)
     Mₐₜppm::Array{Float64,1} # Carbon concentration increase in atmosphere (ppm from 1750)

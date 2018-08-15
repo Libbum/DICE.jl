@@ -1,4 +1,4 @@
-immutable VCJL <: Version end
+struct VCJL <: Version end
 
 Base.show(io::IO, v::VCJL) = print(io, "CJL")
 
@@ -19,7 +19,7 @@ end
 
 export vCJL
 
-@extend immutable OptionsVCJL <: Options
+@extend struct OptionsVCJL <: Options
     δσ₂::Float64 #Quadratic term in decarbonization
     σ₀::Float64 #CO₂-equivalent emissions-GNP ratio 2005
     backrat::Float64 #atio initial to final backstop cost
@@ -118,7 +118,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsVCJL)
 end
 
 
-@extend immutable ParametersVCJL <: Parameters
+@extend struct ParametersVCJL <: Parameters
     rr::Array{Float64,1} # Average utility social discount rate
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
@@ -134,17 +134,17 @@ function generate_parameters(c::OptionsVCJL)
 
     # Growth factor population
     #NOTE: This is only a helper function for L, so we don't include it in the Narrative anywhere.
-    gfacpop = Array{Float64}(c.N);
+    gfacpop = Array{Float64}(undef, c.N);
     # Level of population and labor
-    L = Array{Float64}(c.N);
+    L = Array{Float64}(undef, c.N);
     # Growth rate of productivity from 0 to N
-    gₐ = Array{Float64}(c.N);
+    gₐ = Array{Float64}(undef, c.N);
     # Change in sigma (cumulative improvement of energy efficiency)
-    gσ = Array{Float64}(c.N);
+    gσ = Array{Float64}(undef, c.N);
     # Emissions from deforestation
-    Etree = Array{Float64}(c.N);
+    Etree = Array{Float64}(undef, c.N);
     # Average utility social discount rate
-    rr = Array{Float64}(c.N);
+    rr = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         gfacpop[i] = (exp.(c.popadj*(i-1))-1)/exp.(c.popadj*(i-1));
@@ -157,10 +157,10 @@ function generate_parameters(c::OptionsVCJL)
 
     # Initial conditions and offset required
     # Level of total factor productivity
-    A = Array{Float64}(c.N);
+    A = Array{Float64}(undef, c.N);
     A[1] = c.a₀;
     # CO2-equivalent-emissions output ratio
-    σ = Array{Float64}(c.N);
+    σ = Array{Float64}(undef, c.N);
     σ[1] = σ₀;
 
     for i in 1:c.N-1
@@ -169,11 +169,11 @@ function generate_parameters(c::OptionsVCJL)
     end
 
     # Adjusted cost for backstop
-    θ₁ = Array{Float64}(c.N);
+    θ₁ = Array{Float64}(undef, c.N);
     # Exogenous forcing for other greenhouse gases
-    fₑₓ = Array{Float64}(c.N);
+    fₑₓ = Array{Float64}(undef, c.N);
     # Fraction of emissions in control regime
-    partfract = Array{Float64}(c.N);
+    partfract = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         θ₁[i] = (c.pback*σ[i]/c.θ₂)*((c.backrat-1+exp.(-c.gback*(i-1)))/c.backrat);
@@ -362,7 +362,7 @@ function model_results(model::JuMP.Model, config::OptionsVCJL, params::Parameter
     S = getvalue(vars.S);
     μ = getvalue(vars.μ);
     RI = getvalue(vars.RI);
-    scc = -1000.*getdual(eqs.eeq)./(getdual(eqs.kk)+.00000000001);
+    scc = -1000.0*getdual(eqs.eeq)./(getdual(eqs.kk)+.00000000001);
     mcemis = config.θ₂.*params.θ₁.*μ.^(config.θ₂-1)./params.σ.*1000.;
     ResultsVCJL(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,MCABATE,MₐₜAV,PCY,mcemis)
