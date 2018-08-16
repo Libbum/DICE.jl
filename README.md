@@ -21,6 +21,8 @@ Economists, financiers and chemical engineers seem to love using the [GAMS](http
 Since there are a number of perfectly capable open source non-linear solvers in existence, this repository holds various DICE implementations that require no money down to operate.
 
 ## Models
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_shield)
+
 
 **Implemented**
 - v2013R (Vanilla Version)
@@ -135,3 +137,6 @@ The solver listed in the source is [Ipopt](https://projects.coin-or.org/Ipopt): 
 As we do not include the solver in this repository, there is no need to distribute this license here. EPL is compatible with MIT for this use case (GPL for instance is not).
 One is welcomed to use an alternate solver to suit their needs as the [JuMP](https://github.com/JuliaOpt/JuMP.jl) framework integrates with [several](http://www.juliaopt.org/JuMP.jl/0.18/installation.html#getting-solvers).
 Please remain aware of the licensing restrictions for each, as many license choices in this domain are incompatible.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_large)
