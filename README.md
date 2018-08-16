@@ -12,6 +12,10 @@
     <a href="https://codecov.io/gh/Libbum/DICE.jl">
         <img src="https://codecov.io/gh/Libbum/DICE.jl/branch/master/graph/badge.svg" alt="Codecov" />
     </a>
+    |
+    <a href="https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_shield">
+        <img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=shield" alt="FOSSA Status" />
+    </a>
 </div>
 <br />
 
@@ -21,8 +25,6 @@ Economists, financiers and chemical engineers seem to love using the [GAMS](http
 Since there are a number of perfectly capable open source non-linear solvers in existence, this repository holds various DICE implementations that require no money down to operate.
 
 ## Models
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_shield)
-
 
 **Implemented**
 - v2013R (Vanilla Version)
