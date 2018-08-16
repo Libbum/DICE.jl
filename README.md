@@ -12,6 +12,10 @@
     <a href="https://codecov.io/gh/Libbum/DICE.jl">
         <img src="https://codecov.io/gh/Libbum/DICE.jl/branch/master/graph/badge.svg" alt="Codecov" />
     </a>
+    |
+    <a href="https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_shield">
+        <img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=shield" alt="FOSSA Status" />
+    </a>
 </div>
 <br />
 
@@ -135,3 +139,6 @@ The solver listed in the source is [Ipopt](https://projects.coin-or.org/Ipopt): 
 As we do not include the solver in this repository, there is no need to distribute this license here. EPL is compatible with MIT for this use case (GPL for instance is not).
 One is welcomed to use an alternate solver to suit their needs as the [JuMP](https://github.com/JuliaOpt/JuMP.jl) framework integrates with [several](http://www.juliaopt.org/JuMP.jl/0.18/installation.html#getting-solvers).
 Please remain aware of the licensing restrictions for each, as many license choices in this domain are incompatible.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FLibbum%2FDICE.jl?ref=badge_large)
