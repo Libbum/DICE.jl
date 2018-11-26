@@ -1,30 +1,29 @@
-immutable V2016R <: Version end
+immutable V2016R2 <: Version end
 
-Base.show(io::IO, v::V2016R) = print(io, "v2016R beta")
+Base.show(io::IO, v::V2016R2) = print(io, "v2016R2")
 
 """
-    v2016R()
+    v2016R2()
 
-Identifier for the 2016R beta version of the model.
-Note that this is a beta version following `DICE2016R-091916ap.gms`.
+Identifier for the 2016R2 version of the model.
 
 # Examples
 ```jldoctest
-julia> v2016R()
-v2016R beta
+julia> v2016R2()
+v2016R2
 ```
 """
-function v2016R()
-    V2016R()
+function v2016R2()
+    V2016R2()
 end
 
-export v2016R
+export v2016R2
 
-function options(version::V2016R;
+function options(version::V2016R2;
     N::Int = 100, #Number of years to calculate (from 2015 onwards)
     tstep::Int = 5, #Years per Period
     α::Float64 = 1.45, #Elasticity of marginal utility of consumption
-    ρ::Float64 = 0.015, #Initial rate of social time preference per year ρ
+    ρ::Float64 = 0.015, #Initial rate of social time preference per year
     γₑ::Float64 = 0.3, #Capital elasticity in production function
     pop₀::Int = 7403, #Initial world population 2015 (millions)
     popadj::Float64 = 0.134, #Growth rate to calibrate to 2050 pop projection
@@ -65,8 +64,8 @@ function options(version::V2016R;
     θ₂::Float64 = 2.6, #Exponent of control cost function
     pback::Float64 = 550.0, #Cost of backstop 2010$ per tCO2 2015
     gback::Float64 = 0.025, #Initial cost decline backstop cost per period
-    limμ::Float64 = 1.2, #Upper limit on control rate after 2150
-    tnopol::Float64 = 45.0, #Period before which no emissions controls base
+    limμ::Float64 = 1.0, #Upper limit on control rate after 2150 -- Altered from 2016R
+    tnopol::Float64 = 40.0, #Period before which no emissions controls base -- Altered from 2016R
     cprice₀::Float64 = 2.0, #Initial base carbon price (2010$ per tCO2)
     gcprice::Float64 = 0.02, #Growth rate of base carbon price per year
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
@@ -75,17 +74,17 @@ function options(version::V2016R;
     OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,e₀,μ₀,tnopol,cprice₀,gcprice,ψ₁₀)
 end
 
-function generate_parameters(version::V2016R, c::OptionsV2016, model::JuMP.Model)
+function generate_parameters(version::V2016R2, c::OptionsV2016, model::JuMP.Model)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
-    ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
+    ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/233.59; # Carbon cycle transition matrix coefficient #TODO: Vectorise mueq
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
-    ϕ₃₂::Float64 = c.ϕ₂₃*c.mueq/c.mleq; # Carbon cycle transition matrix coefficient
+    ϕ₃₂::Float64 = c.ϕ₂₃*233.59/c.mleq; # Carbon cycle transition matrix coefficient #TODO: Vectorise mueq
     ϕ₃₃::Float64 = 1 - ϕ₃₂; # Carbon cycle transition matrix coefficient
     σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
-    λ::Float64 = c.η/c.t2xco2; # Climate model parameter
+    λ::Float64 = c.η/2.00767; # Climate model parameter -- TODO: Vectorise
 
-    @NLparameter(model, ψ₂ == c.ψ₂);
+    @NLparameter(model, ψ₂ == 0.00061); #TODO: Vectorise
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
@@ -100,7 +99,7 @@ function generate_parameters(version::V2016R, c::OptionsV2016, model::JuMP.Model
 
     for i in 1:c.N
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
-        gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
+        gₐ[i] = -0.00241*exp.(-c.δₐ*5*(i-1)); #-- TODO: Vecorise c.ga₀ and gₐ
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
         rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
@@ -115,7 +114,7 @@ function generate_parameters(version::V2016R, c::OptionsV2016, model::JuMP.Model
     A[1] = c.a₀;
     # Change in sigma (cumulative improvement of energy efficiency)
     gσ = Array{Float64}(c.N);
-    gσ[1] = c.gσ₁;
+    gσ[1] = -0.02002; #TODO: Vectorise gσ₁
     # CO2-equivalent-emissions output ratio
     σ = Array{Float64}(c.N);
     σ[1] = σ₀;
@@ -126,7 +125,7 @@ function generate_parameters(version::V2016R, c::OptionsV2016, model::JuMP.Model
 
     for i in 1:c.N-1
         L[i+1] = L[i]*(c.popasym/L[i])^c.popadj;
-        A[i+1] = A[i]/(1-gₐ[i]);
+        A[i+1] = A[i]/(1-gₐ[i]); #TODO: Vectorise A -> ALPROD
         gσ[i+1] = gσ[i]*((1+c.δσ)^c.tstep);
         σ[i+1] = σ[i]*exp.(gσ[i]*c.tstep);
         cumtree[i+1] = cumtree[i]+Etree[i]*(5/3.666);
@@ -148,12 +147,12 @@ function generate_parameters(version::V2016R, c::OptionsV2016, model::JuMP.Model
     ParametersV2016(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,rr,optlrsav,ψ₂,cumtree)
 end
 
-#NOTE: CCATOT and the Tₐₜ upper bound is the only difference tho the 2013R models.
-function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
+#NOTE: CCATOT and the Tₐₜ upper bound is the only difference to the 2013R models.
+function model_vars(version::V2016R2, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
     # Variables #
     @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound[i]); # Emission control rate GHGs
     @variable(model, FORC[1:N]); # Increase in radiative forcing (watts per m2 from 1900)
-    @variable(model, 0.0 <= Tₐₜ[1:N] <= 12.0); # Increase temperature of atmosphere (degrees C from 1900)
+    @variable(model, 0.0 <= Tₐₜ[1:N] <= 20.0); # Increase temperature of atmosphere (degrees C from 1900) -- Changed from 2016R
     @variable(model, -1.0 <= Tₗₒ[1:N] <= 20.0); # Increase temperatureof lower oceans (degrees C from 1900)
     @variable(model, Mₐₜ[1:N] >= 10.0); # Carbon concentration increase in atmosphere (GtC from 1750)
     @variable(model, Mᵤₚ[1:N] >= 100.0); # Carbon concentration increase in shallow oceans (GtC from 1750)
@@ -182,8 +181,7 @@ function model_vars(version::V2016R, model::JuMP.Model, N::Int64, cca_ubound::Fl
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
-#NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(version::V2016R2, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -205,6 +203,7 @@ function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, par
     # Carbon price equation from abatement
     @NLconstraint(model, [i=1:N], vars.CPRICE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
     # Output gross equation
+    #TODO: A is no longer this, but is generated from a stochastic system.
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
     @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
@@ -215,7 +214,7 @@ function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, par
     # Per capita consumption definition
     @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Savings rate equation
-    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
+    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.YGROSS[i]); # Altered from 2016R
     # Period utility
     @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
@@ -258,15 +257,13 @@ function model_eqs(version::V2016R, model::JuMP.Model, config::OptionsV2016, par
     EquationsV2016(eeq,cc)
 end
 
-function assign_scenario(s::BasePriceScenario, version::V2016R, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
-    # We add the first solve since our run is infeasible without it.
-    JuMP.solve(model);
-    setvalue(params.ψ₂, 0.0);
+function assign_scenario(s::BasePriceScenario, version::V2016R2, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+    setvalue(params.ψ₂, 0.000001);
     JuMP.solve(model);
 
     photel = getvalue(vars.CPRICE);
 
-    setvalue(params.ψ₂, config.ψ₂);
+    setvalue(params.ψ₂, 0.00061); #TODO: Vectorise
     for i in 1:config.N
         if i <= config.tnopol
             setupperbound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
@@ -274,7 +271,7 @@ function assign_scenario(s::BasePriceScenario, version::V2016R, model::JuMP.Mode
     end
 end
 
-function solve(scenario::Scenario, version::V2016R;
+function solve(scenario::Scenario, version::V2016R2;
     config::OptionsV2016 = options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
@@ -282,8 +279,8 @@ function solve(scenario::Scenario, version::V2016R;
     params = generate_parameters(version, config, model);
 
     # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ end for t in 1:config.N];
-    cprice_ubound = fill(Inf, config.N); #No initial price bound
+    μ_ubound = fill(config.limμ, config.N);
+    cprice_ubound = fill(10000.0, config.N);
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
