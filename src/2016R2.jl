@@ -19,6 +19,20 @@ end
 
 export v2016R2
 
+@extend immutable OptionsV2016R2 <: Options
+    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2015
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
+    ψ₁₀::Float64 #Initial damage intercept
+    quint_ψ₂::Array{Float64}
+    quint_gₐ₀::Array{Float64}
+    quint_t2xco2::Array{Float64}
+    quint_gσ₀::Array{Float64}
+    quint_mueq::Array{Float64}
+end
+
 function options(version::V2016R2;
     N::Int = 100, #Number of years to calculate (from 2015 onwards)
     tstep::Int = 5, #Years per Period
@@ -70,21 +84,26 @@ function options(version::V2016R2;
     gcprice::Float64 = 0.02, #Growth rate of base carbon price per year
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.0302455265681763, #Multiplicative scaling coefficient
-    scale2::Float64 = -10993.704) #Additive scaling coefficient
-    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,e₀,μ₀,tnopol,cprice₀,gcprice,ψ₁₀)
+    scale2::Float64 = -10993.704, #Additive scaling coefficient
+    quint_ψ₂ = [0.00061, 0.00141, 0.00227, 0.00242, 0.00464], #Coefficients for the damage equation kkdam
+    quint_gₐ₀ = [-0.00241, 0.04307, 0.076, 0.09843, 0.16508], #Coefficients for the PROD equation kkprod
+    quint_t2xco2 = [2.00767, 2.51586, 3.1, 3.38802, 4.49126], #Coefficients for the climate equation kkets
+    quint_gσ₀ = [-0.02002, -0.01689, -0.0152, -0.01334, -0.01055], #Coefficients for emissions intensity kksig
+    quint_mueq = [233.59, 292.95, 360, 394.35, 519.33]) #Coefficients for the carbon cycle kkcarb
+    OptionsV2016R2(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,e₀,μ₀,tnopol,cprice₀,gcprice,ψ₁₀,quint_ψ₂,quint_gₐ₀,quint_t2xco2,quint_gσ₀,quint_mueq)
 end
 
-function generate_parameters(version::V2016R2, c::OptionsV2016, model::JuMP.Model)
+function generate_parameters(version::V2016R2, c::OptionsV2016R2, model::JuMP.Model, idx::Array{Int64})
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
-    ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/233.59; # Carbon cycle transition matrix coefficient #TODO: Vectorise mueq
+    ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.quint_mueq[idx[5]]; # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
-    ϕ₃₂::Float64 = c.ϕ₂₃*233.59/c.mleq; # Carbon cycle transition matrix coefficient #TODO: Vectorise mueq
+    ϕ₃₂::Float64 = c.ϕ₂₃*c.quint_mueq[idx[5]]/c.mleq; # Carbon cycle transition matrix coefficient
     ϕ₃₃::Float64 = 1 - ϕ₃₂; # Carbon cycle transition matrix coefficient
     σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
-    λ::Float64 = c.η/2.00767; # Climate model parameter -- TODO: Vectorise
+    λ::Float64 = c.η/c.quint_t2xco2[idx[3]]; # Climate model parameter
 
-    @NLparameter(model, ψ₂ == 0.00061); #TODO: Vectorise
+    @NLparameter(model, ψ₂ == c.quint_ψ₂[idx[1]]);
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
@@ -99,7 +118,7 @@ function generate_parameters(version::V2016R2, c::OptionsV2016, model::JuMP.Mode
 
     for i in 1:c.N
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
-        gₐ[i] = -0.00241*exp.(-c.δₐ*5*(i-1)); #-- TODO: Vecorise c.ga₀ and gₐ
+        gₐ[i] = c.quint_gₐ₀[idx[2]]*exp.(-c.δₐ*5*(i-1));
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
         rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
@@ -114,7 +133,7 @@ function generate_parameters(version::V2016R2, c::OptionsV2016, model::JuMP.Mode
     A[1] = c.a₀;
     # Change in sigma (cumulative improvement of energy efficiency)
     gσ = Array{Float64}(c.N);
-    gσ[1] = -0.02002; #TODO: Vectorise gσ₁
+    gσ[1] = c.quint_gσ₀[idx[4]];
     # CO2-equivalent-emissions output ratio
     σ = Array{Float64}(c.N);
     σ[1] = σ₀;
@@ -125,7 +144,7 @@ function generate_parameters(version::V2016R2, c::OptionsV2016, model::JuMP.Mode
 
     for i in 1:c.N-1
         L[i+1] = L[i]*(c.popasym/L[i])^c.popadj;
-        A[i+1] = A[i]/(1-gₐ[i]); #TODO: Vectorise A -> ALPROD
+        A[i+1] = A[i]/(1-gₐ[i]);
         gσ[i+1] = gσ[i]*((1+c.δσ)^c.tstep);
         σ[i+1] = σ[i]*exp.(gσ[i]*c.tstep);
         cumtree[i+1] = cumtree[i]+Etree[i]*(5/3.666);
@@ -181,7 +200,7 @@ function model_vars(version::V2016R2, model::JuMP.Model, N::Int64, cca_ubound::F
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
-function model_eqs(version::V2016R2, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(version::V2016R2, model::JuMP.Model, config::OptionsV2016R2, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -203,7 +222,6 @@ function model_eqs(version::V2016R2, model::JuMP.Model, config::OptionsV2016, pa
     # Carbon price equation from abatement
     @NLconstraint(model, [i=1:N], vars.CPRICE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
     # Output gross equation
-    #TODO: A is no longer this, but is generated from a stochastic system.
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
     @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
@@ -257,42 +275,65 @@ function model_eqs(version::V2016R2, model::JuMP.Model, config::OptionsV2016, pa
     EquationsV2016(eeq,cc)
 end
 
-function assign_scenario(s::BasePriceScenario, version::V2016R2, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function assign_scenario(s::BasePriceScenario, version::V2016R2, model::JuMP.Model, config::OptionsV2016R2, idx::Int64, params::ParametersV2016, vars::VariablesV2016)
     setvalue(params.ψ₂, 0.000001);
-    JuMP.solve(model);
+    out = JuMP.solve(model);
+    if out == :Optimal
+        photel = getvalue(vars.CPRICE);
 
-    photel = getvalue(vars.CPRICE);
-
-    setvalue(params.ψ₂, 0.00061); #TODO: Vectorise
-    for i in 1:config.N
-        if i <= config.tnopol
-            setupperbound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
+        setvalue(params.ψ₂, config.quint_ψ₂[idx]);
+        for i in 1:config.N
+            if i <= config.tnopol
+                setupperbound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
+            end
         end
+    else
+        println("Warning: initialisation of problem infeasible")
     end
 end
 
 function solve(scenario::Scenario, version::V2016R2;
-    config::OptionsV2016 = options(version),
+    config::OptionsV2016R2 = options(version),
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
-
-    model = JuMP.Model(solver = solver);
-    params = generate_parameters(version, config, model);
 
     # Rate limit
     μ_ubound = fill(config.limμ, config.N);
     cprice_ubound = fill(10000.0, config.N);
+    #13124 hits infeasible in it's first optimisation, will then hit max_iter probably
+    narratives = Array{DICENarrative}(5,5,5,5,5);
+    for phi in 1:5 #quint_ψ₂
+        for ga in 1:5 #quint_gₐ₀
+            for t2 in 1:5 #quint_t2xco2
+                for gs in 1:5 #quint_gσ₀
+                    for mu in 1:5 #quint_mueq
+                        idx = [phi, ga, t2, gs, mu]
 
-    variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
+                        model = JuMP.Model(solver = solver);
 
-    equations = model_eqs(version, model, config, params, variables);
+                        params = generate_parameters(version, config, model, idx);
 
-    assign_scenario(scenario, version, model, config, params, variables);
+                        variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    JuMP.solve(model);
-    JuMP.solve(model);
-    JuMP.solve(model);
+                        equations = model_eqs(version, model, config, params, variables);
 
-    results = model_results(model, config, params, variables, equations);
+                        assign_scenario(scenario, version, model, config, phi, params, variables);
 
-    DICENarrative(config,params,model,scenario,version,variables,equations,results)
+                        out = JuMP.solve(model);
+                        #TODO: We force a fail rather than fixing this atm.
+                        if out == :Optimal
+                            JuMP.solve(model);
+                            JuMP.solve(model);
+
+                            results = model_results(model, config, params, variables, equations);
+                            println(phi, ga, t2, gs, mu);
+                            narratives[phi, ga, t2, gs, mu] = DICENarrative(config,params,model,scenario,version,variables,equations,results);
+                        else
+                            println("Warning: Failed to solve ", phi, ga, t2, gs, mu);
+                        end
+                    end
+                end
+            end
+        end
+    end
+    narratives
 end

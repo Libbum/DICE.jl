@@ -20,6 +20,47 @@ end
 
 export v2016R
 
+@extend immutable OptionsV2016 <: Options
+    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2015
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
+    ψ₁₀::Float64 #Initial damage intercept
+end
+
+function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
+    println(io, "Options for 2016 versions");
+    println(io, "Time step");
+    println(io, "N: $(opt.N), tstep: $(opt.tstep)");
+    println(io, "Preferences");
+    println(io, "α: $(opt.α), ρ: $(opt.ρ)");
+    println(io, "Population and Technology");
+    println(io, "γₑ: $(opt.γₑ), pop₀: $(opt.pop₀), popadj: $(opt.popadj), popasym: $(opt.popasym), δk: $(opt.δk)");
+    println(io, "q₀: $(opt.q₀), k₀: $(opt.k₀), a₀: $(opt.a₀), ga₀: $(opt.ga₀), δₐ: $(opt.δₐ)");
+    println(io, "Emissions Parameters");
+    println(io, "gσ₁: $(opt.gσ₁), δσ: $(opt.δσ), eland₀: $(opt.eland₀)");
+    println(io, "deland: $(opt.deland), e₀: $(opt.e₀), μ₀: $(opt.μ₀)");
+    println(io, "Carbon Cycle");
+    println(io, "mat₀: $(opt.mat₀), mu₀: $(opt.mu₀), ml₀: $(opt.ml₀)");
+    println(io, "mateq: $(opt.mateq), mueq: $(opt.mueq), mleq: $(opt.mleq)");
+    println(io, "Flow Parameters");
+    println(io, "ϕ₁₂: $(opt.ϕ₁₂), ϕ₂₃: $(opt.ϕ₂₃)");
+    println(io, "Climate Model Parameters");
+    println(io, "t2xco2: $(opt.t2xco2), fₑₓ0: $(opt.fₑₓ0), fₑₓ1: $(opt.fₑₓ1)");
+    println(io, "tocean₀: $(opt.tocean₀), tatm₀: $(opt.tatm₀), ξ₁: $(opt.ξ₁)");
+    println(io, "ξ₃: $(opt.ξ₃), ξ₄: $(opt.ξ₄), η: $(opt.η)");
+    println(io, "Climate Damage Parameters");
+    println(io, "ψ₁₀: $(opt.ψ₁₀), ψ₁: $(opt.ψ₁), ψ₂: $(opt.ψ₂), ψ₃: $(opt.ψ₃)");
+    println(io, "Abatement Cost");
+    println(io, "θ₂: $(opt.θ₂), pback: $(opt.pback), gback: $(opt.gback), limμ: $(opt.limμ)");
+    println(io, "tnopol: $(opt.tnopol), cprice₀: $(opt.cprice₀), gcprice: $(opt.gcprice)");
+    println(io, "Fossil Fuel Availability");
+    println(io, "fosslim: $(opt.fosslim)");
+    println(io, "Scaling Parameters");
+    print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
+end
+
 function options(version::V2016R;
     N::Int = 100, #Number of years to calculate (from 2015 onwards)
     tstep::Int = 5, #Years per Period
