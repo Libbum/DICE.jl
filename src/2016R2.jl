@@ -300,12 +300,16 @@ function solve(scenario::Scenario, version::V2016R2;
     μ_ubound = fill(config.limμ, config.N);
     cprice_ubound = fill(10000.0, config.N);
     #13124 hits infeasible in it's first optimisation, will then hit max_iter probably
-    narratives = Array{DICENarrative}(5,5,5,5,5);
+
+    # Write results directly to file as they come in. Drastically reduces memory overhead.
+    fn = "R2BaseResults.jld2";
+    output = jldopen(fn, "w"); #Overwrite any old data
+    close(output);
     for phi in 1:5 #quint_ψ₂
-        for ga in 1:5 #quint_gₐ₀
-            for t2 in 1:5 #quint_t2xco2
-                for gs in 1:5 #quint_gσ₀
-                    for mu in 1:5 #quint_mueq
+        for t2 in 1:5 #quint_t2xco2
+            for ga in 1:5 #quint_gₐ₀
+                for mu in 1:5 #quint_mueq
+                    for gs in 1:5 #quint_gσ₀
                         idx = [phi, ga, t2, gs, mu]
 
                         model = JuMP.Model(solver = solver);
@@ -324,9 +328,11 @@ function solve(scenario::Scenario, version::V2016R2;
                             JuMP.solve(model);
                             JuMP.solve(model);
 
-                            results = model_results(model, config, params, variables, equations);
+                            output = jldopen(fn, "a");
+                            write(output, string(phi, ga, t2, gs, mu), model_results(model, config, params, variables, equations));
+                            close(output);
                             println(phi, ga, t2, gs, mu);
-                            narratives[phi, ga, t2, gs, mu] = DICENarrative(config,params,model,scenario,version,variables,equations,results);
+                            #DICENarrative(config,params,model,scenario,version,variables,equations,results);
                         else
                             println("Warning: Failed to solve ", phi, ga, t2, gs, mu);
                         end
@@ -335,5 +341,5 @@ function solve(scenario::Scenario, version::V2016R2;
             end
         end
     end
-    narratives
+    output
 end
