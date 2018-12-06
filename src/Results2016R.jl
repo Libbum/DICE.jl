@@ -12,7 +12,7 @@
 end
 
 function model_results(model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016, eqs::EquationsV2016)
-    years = 2010+(config.tstep*(1:config.N));
+    years = 2010 .+(config.tstep*(1:config.N));
     Mₐₜ = getvalue(vars.Mₐₜ);
     Mₐₜppm = Mₐₜ/2.13;
     Mᵤₚ = getvalue(vars.Mᵤₚ);
@@ -45,9 +45,9 @@ function model_results(model::JuMP.Model, config::OptionsV2016, params::Paramete
     μ = getvalue(vars.μ);
     μ_participants = (co2price./params.pbacktime).^(1/(config.θ₂-1));
     RI = getvalue(vars.RI);
-    scc = -1000.0*getdual(eqs.eeq)./(.00001+getdual(eqs.cc));
-    atfrac = (Mₐₜ-588)./(CCATOT+.000001);
-    atfrac2010 = (Mₐₜ-config.mat₀)./(.00001+CCATOT-CCATOT[1]);
+    scc = -1000.0 .*getdual(eqs.eeq)./(.00001 .+getdual(eqs.cc));
+    atfrac = (Mₐₜ .-588)./(CCATOT .+.000001);
+    atfrac2010 = (Mₐₜ .-config.mat₀)./(.00001 .+CCATOT .-CCATOT[1]);
     ResultsV2016(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,Eind,Σ,Ω,Λ,co2price,cprice,μ_participants,CCATOT,atfrac,atfrac2010)
 end

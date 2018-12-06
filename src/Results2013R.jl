@@ -12,7 +12,7 @@
 end
 
 function model_results(model::JuMP.Model, config::Options, params::Parameters, vars::Variables, eqs::Equations)
-    years = 2005+(config.tstep*(1:config.N));
+    years = 2005 .+ (config.tstep*(1:config.N));
     Mₐₜ = getvalue(vars.Mₐₜ);
     Mₐₜppm = getvalue(vars.Mₐₜ)/2.13;
     Mᵤₚ = getvalue(vars.Mᵤₚ);
