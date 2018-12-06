@@ -5,3 +5,4 @@ Manifest.toml
 deps/deps.jl
 docs/build
 docs/site
+*.jld2
