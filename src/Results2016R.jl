@@ -11,41 +11,41 @@
     atfrac2010::Array{Float64,1} # Atmospheric fraction since 2010
 end
 
-function model_results(model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016, eqs::EquationsV2016)
+function model_results(model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016, eqs::EquationsV2016)
     years = 2010 .+(config.tstep*(1:config.N));
-    Mₐₜ = getvalue(vars.Mₐₜ);
+    Mₐₜ = JuMP.value.(vars.Mₐₜ);
     Mₐₜppm = Mₐₜ/2.13;
-    Mᵤₚ = getvalue(vars.Mᵤₚ);
-    Mₗₒ = getvalue(vars.Mₗₒ);
-    CCA = getvalue(vars.CCA);
-    CCATOT = getvalue(vars.CCATOT);
-    CCAratio = getvalue(vars.CCA)/config.fosslim;
-    Tₐₜ = getvalue(vars.Tₐₜ);
-    FORC = getvalue(vars.FORC);
-    Tₗₒ = getvalue(vars.Tₗₒ);
-    YGROSS = getvalue(vars.YGROSS);
-    Ω = getvalue(vars.Ω);
-    DAMAGES = getvalue(vars.DAMAGES);
-    YNET = getvalue(vars.YNET);
-    Λ = getvalue(vars.Λ);
-    Y = getvalue(vars.Y);
-    E = getvalue(vars.E);
-    Eind = getvalue(vars.Eind);
+    Mᵤₚ = JuMP.value.(vars.Mᵤₚ);
+    Mₗₒ = JuMP.value.(vars.Mₗₒ);
+    CCA = JuMP.value.(vars.CCA);
+    CCATOT = JuMP.value.(vars.CCATOT);
+    CCAratio = JuMP.value.(vars.CCA)/config.fosslim;
+    Tₐₜ = JuMP.value.(vars.Tₐₜ);
+    FORC = JuMP.value.(vars.FORC);
+    Tₗₒ = JuMP.value.(vars.Tₗₒ);
+    YGROSS = JuMP.value.(vars.YGROSS);
+    Ω = JuMP.value.(vars.Ω);
+    DAMAGES = JuMP.value.(vars.DAMAGES);
+    YNET = JuMP.value.(vars.YNET);
+    Λ = JuMP.value.(vars.Λ);
+    Y = JuMP.value.(vars.Y);
+    E = JuMP.value.(vars.E);
+    Eind = JuMP.value.(vars.Eind);
     Σ = Eind./YGROSS;
-    I = getvalue(vars.I);
-    K = getvalue(vars.K);
+    I = JuMP.value.(vars.I);
+    K = JuMP.value.(vars.K);
     MPK = config.γₑ.*YGROSS./K;
-    C = getvalue(vars.C);
-    CPC = getvalue(vars.CPC);
-    PERIODU = getvalue(vars.PERIODU);
-    UTILITY = getvalue(vars.UTILITY);
-    S = getvalue(vars.S);
-    co2price = getvalue(vars.CPRICE);
-    cprice = getvalue(vars.CPRICE)*3.666;
-    μ = getvalue(vars.μ);
+    C = JuMP.value.(vars.C);
+    CPC = JuMP.value.(vars.CPC);
+    PERIODU = JuMP.value.(vars.PERIODU);
+    UTILITY = JuMP.value(vars.UTILITY);
+    S = JuMP.value.(vars.S);
+    co2price = JuMP.value.(vars.CPRICE);
+    cprice = JuMP.value.(vars.CPRICE)*3.666;
+    μ = JuMP.value.(vars.μ);
     μ_participants = (co2price./params.pbacktime).^(1/(config.θ₂-1));
-    RI = getvalue(vars.RI);
-    scc = -1000.0 .*getdual(eqs.eeq)./(.00001 .+getdual(eqs.cc));
+    RI = JuMP.value.(vars.RI);
+    scc = -1000.0 .*JuMP.dual.(eqs.eeq)./(.00001 .+JuMP.dual.(eqs.cc));
     atfrac = (Mₐₜ .-588)./(CCATOT .+.000001);
     atfrac2010 = (Mₐₜ .-config.mat₀)./(.00001 .+CCATOT .-CCATOT[1]);
     ResultsV2016(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,

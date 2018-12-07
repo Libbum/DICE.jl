@@ -1,11 +1,8 @@
 module DICE
 
-#Don't polute the namespace. We want to use `solve` ourselves.
-import JuMP;
-import JuMP: @variable, @constraint, @NLconstraint, @objective, @NLparameter;
-import JuMP: getvalue, setvalue, getdual, setupperbound, setlowerbound;
+using JuMP;
 #Ipopt is distributed under the EPL.
-#We don't package it here though, and assume you have this set up on your system already.
+#We don't package it here, although it will be pulled in and installed on your system if you don't have it already.
 using Ipopt;
 
 include("Abstractions.jl")
@@ -23,7 +20,7 @@ include("Scenarios.jl")
 struct DICENarrative
     constants::Options
     parameters::Parameters
-    model::JuMP.Model
+    model::Model
     scenario::Scenario
     version::Version
     variables::Variables
@@ -42,8 +39,8 @@ function options end
 export solve, options
 
 # Include all version implementations
-include("2013R.jl")
+#include("2013R.jl")
 include("2016R.jl")
-include("CJL.jl")
+#include("CJL.jl")
 
 end
