@@ -120,7 +120,7 @@ end
     partfract::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
 end
 
-function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
+function generate_parameters(c::RockyRoadOptions, model::Model)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
@@ -207,7 +207,7 @@ end
 #TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
-    println(io, "Optimal savings rate: $(getvalue(opt.optlrsav))");
+    println(io, "Optimal savings rate: $(JuMP.value(opt.optlrsav))");
     println(io, "Carbon cycle transition matrix coefficients");
     println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
     println(io, "2010 Carbon intensity: $(opt.σ₀)");
@@ -216,7 +216,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Backstop price: $(opt.pbacktime)");
     println(io, "Growth rate of productivity: $(opt.gₐ)");
     println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(getvalue(opt.rr))");
+    println(io, "Avg utility social discout rate: $(JuMP.value(opt.rr))");
     println(io, "Base case carbon price: $(opt.cpricebase)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
@@ -224,50 +224,52 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(getvalue(opt.partfract))");
+    print(io, "Fraction of emissions in control regieme: $(JuMP.value(opt.partfract))");
 end
 
 @extend struct RockyRoadEquations <: Equations
-    yy::Array{JuMP.ConstraintRef,1} # Output net equation
+    yy::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output net equation
 end
 
-function model_eqs(model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
+    @constraint(model, eeq, vars.E .== vars.Eind .+ params.Etree);
     # Industrial Emissions
-    @constraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
-    # Radiative forcing equation
-    @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
-    # Equation for damage fraction
-    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    @constraint(model, vars.Eind .== params.σ .* vars.YGROSS .* (1 .- vars.μ));
     # Damage equation
-    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
-    # Cost of exissions reductions equation
-    @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂ * params.partfract[i]^(1-config.θ₂));
-    # Equation for MC abatement
-    @NLconstraint(model, [i=1:N], vars.MCABATE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
-    # Carbon price equation from abatement
-    @NLconstraint(model, [i=1:N], vars.CPRICE[i] == params.pbacktime[i] * (vars.μ[i]/params.partfract[i])^(config.θ₂-1));
-    # Output gross equation
-    @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
+    @constraint(model, vars.DAMAGES .== vars.YGROSS .* vars.Ω);
     # Output net of damages equation
-    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
+    @constraint(model, vars.YNET .== vars.YGROSS .* (1 .- vars.Ω));
     # Output net equation
-    yy = @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    @constraint(model, yy, vars.Y .== vars.YNET .- vars.Λ);
     # Consumption equation
-    @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    @constraint(model, vars.C .== vars.Y .- vars.I);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    @constraint(model, vars.CPC .== 1000.0 .* vars.C ./ params.L);
     # Savings rate equation
-    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
-    # Period utility
-    @NLconstraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
-    # Instantaneous utility function equation
-    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-params.α)-1)/(1-params.α)-1);
+    @constraint(model, vars.I .== vars.S .* vars.Y);
+    for i = 1:N
+        # Radiative forcing equation
+        @NLconstraint(model, vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
+        # Equation for damage fraction
+        @NLconstraint(model, vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+        # Cost of exissions reductions equation
+        @NLconstraint(model, vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂ * params.partfract[i]^(1-config.θ₂));
+        # Equation for MC abatement
+        @NLconstraint(model, vars.MCABATE[i] == params.pbacktime[i] * vars.μ[i]^(config.θ₂-1));
+        # Carbon price equation from abatement
+        @NLconstraint(model, vars.CPRICE[i] == params.pbacktime[i] * (vars.μ[i]/params.partfract[i])^(config.θ₂-1));
+        # Output gross equation
+        @NLconstraint(model, vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
+        # Period utility
+        @NLconstraint(model, vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
+        # Instantaneous utility function equation
+        @NLconstraint(model, vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-params.α)-1)/(1-params.α)-1);
+    end
 
     # Equations (offset) #
     # Cumulative carbon emissions
@@ -284,12 +286,14 @@ function model_eqs(model::JuMP.Model, config::RockyRoadOptions, params::RockyRoa
     @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
     @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
-    # Interest rate equation
-    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
+    for i = 1:N-1
+        # Interest rate equation
+        @NLconstraint(model, vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
+    end
 
     # Savings rate for asympotic equilibrium
     # We need to get the value to use the .== construct here.
-    @constraint(model, vars.S[i=N-10:N] .== getvalue(params.optlrsav));
+    @constraint(model, vars.S[N-10:N] .== JuMP.value(params.optlrsav));
     # Initial conditions
     @constraint(model, vars.CCA[1] == 90.0);
     @constraint(model, vars.K[1] == config.k₀);
@@ -311,13 +315,14 @@ include("ScenariosRockyRoad.jl")
 
 function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+    optimizer = Ipopt.Optimizer)
+    #TODO: Allow users to set optimizer options
+    model = Model(with_optimizer(optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"));
 
-    model = JuMP.Model(solver = solver);
     params = generate_parameters(config, model);
 
     # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ*getvalue(params.partfract[t]) end for t in 1:config.N];
+    μ_ubound = [if t < 30 1.0 else config.limμ*JuMP.value(params.partfract[t]) end for t in 1:config.N];
     cprice_ubound = fill(Inf, config.N); #No initial price bound
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
@@ -326,8 +331,8 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     assign_scenario(scenario, model, config, params, variables);
 
-    JuMP.solve(model);
-    JuMP.solve(model);
+    JuMP.optimize!(model);
+    JuMP.optimize!(model);
 
     results = model_results(model, config, params, variables, equations);
 

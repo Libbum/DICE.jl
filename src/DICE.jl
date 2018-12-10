@@ -39,7 +39,7 @@ function options end
 export solve, options
 
 # Include all version implementations
-#include("2013R.jl")
+include("2013R.jl")
 include("2016R.jl")
 #include("CJL.jl")
 

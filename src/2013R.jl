@@ -46,14 +46,14 @@ end
 export v2013R
 
 @extend struct VariablesV2013 <: Variables
-    Eind::Array{JuMP.Variable,1} # Industrial emissions (GtCO2 per year)
-    Ω::Array{JuMP.Variable,1} # Damages as fraction of gross output
-    Λ::Array{JuMP.Variable,1} # Cost of emissions reductions  (trillions 2005 USD per year)
-    CPRICE::Array{JuMP.Variable,1} # Carbon price (2005$ per ton of CO2)
-    CEMUTOTPER::Array{JuMP.Variable,1} # Period utility
+    Eind::Array{VariableRef,1} # Industrial emissions (GtCO2 per year)
+    Ω::Array{VariableRef,1} # Damages as fraction of gross output
+    Λ::Array{VariableRef,1} # Cost of emissions reductions  (trillions 2005 USD per year)
+    CPRICE::Array{VariableRef,1} # Carbon price (2005$ per ton of CO2)
+    CEMUTOTPER::Array{VariableRef,1} # Period utility
 end
 
-function model_vars(version::V2013R{F}, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1}) where F <: Flavour
+function model_vars(version::V2013R{F}, model::Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1}) where F <: Flavour
     # Variables #
     @variable(model, 0.0 <= μ[i=1:N] <= μ_ubound[i]); # Emission control rate GHGs
     @variable(model, FORC[1:N]); # Increase in radiative forcing (watts per m2 from 1900)

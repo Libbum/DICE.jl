@@ -354,7 +354,7 @@ function solve(scenario::Scenario, version::V2016R;
     config::OptionsV2016 = options(version),
     optimizer = Ipopt.Optimizer)
     #TODO: Allow users to set optimizer options
-    model = Model(with_optimizer(optimizer, print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"));
+    model = Model(with_optimizer(optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"));
     params = generate_parameters(config, model);
 
     # Rate limit
