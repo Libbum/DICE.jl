@@ -1,5 +1,5 @@
 using DICE
-import JuMP
+using JuMP
 using Ipopt
 
 @static if VERSION < v"0.7.0-DEV.2005"
@@ -38,11 +38,11 @@ end
 
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
-ipopt = IpoptSolver(print_frequency_iter=500, max_iter=1000);
-model = JuMP.Model(solver = ipopt);
-modelrr = JuMP.Model(solver = ipopt);
-model2016 = JuMP.Model(solver = ipopt);
-modelcjl = JuMP.Model(solver = ipopt);
+optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes");
+model = Model(optimizer);
+modelrr = Model(optimizer);
+model2016 = Model(optimizer);
+modelcjl = Model(optimizer);
 vanilla_opt = options(v2013R());
 rr_opt = options(v2013R(RockyRoad));
 v2016_opt = options(v2016R());
@@ -116,25 +116,25 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
         end
         @testset "2013R (Rocky Road)" begin
             DICE.assign_scenario(BasePrice, modelrr, rr_opt, rr_params, rr_vars);
-            @test all(x->isfinite.(JuMP.getupperbound(rr_vars.CPRICE)[x]), 1:Int(rr_opt.tnopol))
+            @test all(x->isfinite.(JuMP.get_upper_bound(rr_vars.CPRICE)[x]), 1:Int(rr_opt.tnopol))
             DICE.assign_scenario(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars);
-            @test JuMP.getupperbound(rr_vars.μ[1]) == rr_opt.μ₀
+            @test JuMP.get_upper_bound(rr_vars.μ[1]) == rr_opt.μ₀
             DICE.assign_scenario(Limit2Degrees, modelrr, rr_opt, rr_params, rr_vars);
-            @test JuMP.getupperbound(rr_vars.Tₐₜ[1]) ≈ 2.0
+            @test JuMP.get_upper_bound(rr_vars.Tₐₜ[1]) ≈ 2.0
             DICE.assign_scenario(Stern, modelrr, rr_opt, rr_params, rr_vars);
-            @test JuMP.getvalue(rr_params.α) ≈ 1.01
+            @test JuMP.value(rr_params.α) ≈ 1.01
             DICE.assign_scenario(SternCalibrated, modelrr, rr_opt, rr_params, rr_vars);
-            @test JuMP.getvalue(rr_params.α) ≈ 2.1
+            @test JuMP.value(rr_params.α) ≈ 2.1
             DICE.assign_scenario(Copenhagen, modelrr, rr_opt, rr_params, rr_vars);
-            @test JuMP.getvalue(rr_params.partfract[2]) ≈ 0.390423082
-            @test JuMP.getlowerbound(rr_vars.μ[3]) ≈ 0.110937151
-            @test JuMP.getupperbound(rr_vars.μ[3]) ≈ 0.110937151
+            @test JuMP.value(rr_params.partfract[2]) ≈ 0.390423082
+            @test JuMP.get_lower_bound(rr_vars.μ[3]) ≈ 0.110937151
+            @test JuMP.get_upper_bound(rr_vars.μ[3]) ≈ 0.110937151
         end
         @testset "2016R beta" begin
             DICE.assign_scenario(BasePrice, model2016, v2016_opt, v2016_params, v2016_vars);
-            @test all(x->isfinite.(JuMP.getupperbound(v2016_vars.CPRICE)[x]), 1:Int(v2016_opt.tnopol))
+            @test all(x->isfinite.(JuMP.get_upper_bound(v2016_vars.CPRICE)[x]), 1:Int(v2016_opt.tnopol))
             DICE.assign_scenario(OptimalPrice, model2016, v2016_opt, v2016_params, v2016_vars);
-            @test JuMP.getupperbound(v2016_vars.μ[1]) == v2016_opt.μ₀
+            @test JuMP.get_upper_bound(v2016_vars.μ[1]) == v2016_opt.μ₀
         end
     end
     @testset "Invalid Scenarios" begin
@@ -150,11 +150,11 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
 end
 
 # Optimisation tests.
-base = solve(BasePrice, v2013R(), solver = ipopt);
+base = solve(BasePrice, v2013R(), optimizer = optimizer);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
         @test base.results.UTILITY ≈ 2670.2779245830334
-        result = solve(OptimalPrice, v2013R(), solver = ipopt);
+        result = solve(OptimalPrice, v2013R(), optimizer = optimizer);
         #For some unknown reason, the optimal solution becomes infeasable on travis.
         # See issue #8.
         if get(ENV, "TRAVIS", "false") == "true"
@@ -166,23 +166,23 @@ base = solve(BasePrice, v2013R(), solver = ipopt);
     @testset "2013R (RockyRoad)" begin
         #NOTE: None of these values have been verified yet.
         # See issue #3. Have set some to broken to remember this.
-        result = solve(BasePrice, v2013R(RockyRoad), solver = ipopt);
+        result = solve(BasePrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2670.362568216809
-        result = solve(OptimalPrice, v2013R(RockyRoad), solver = ipopt);
+        result = solve(OptimalPrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2741.230618094657
-        result = solve(Limit2Degrees, v2013R(RockyRoad), solver = ipopt);
+        result = solve(Limit2Degrees, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2695.487309594252
-        result = solve(Stern, v2013R(RockyRoad), solver = ipopt);
+        result = solve(Stern, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 124390.42213103821
-        result = solve(SternCalibrated, v2013R(RockyRoad), solver = ipopt);
+        result = solve(SternCalibrated, v2013R(RockyRoad), optimizer = optimizer);
         @test_broken result.results.UTILITY ≈ 9001.0
-        result = solve(Copenhagen, v2013R(RockyRoad), solver = ipopt);
+        result = solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2725.414606616763
     end
     @testset "2016R beta" begin
-        result = solve(BasePrice, v2016R(), solver = ipopt);
+        result = solve(BasePrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4493.8420532623495
-        result = solve(OptimalPrice, v2016R(), solver = ipopt);
+        result = solve(OptimalPrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4522.257183520258
     end
 end
