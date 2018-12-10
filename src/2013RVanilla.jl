@@ -288,9 +288,9 @@ include("ScenariosVanilla.jl")
 
 function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = options(version),
-    optimizer = Ipopt.Optimizer)
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
     #TODO: Allow users to set optimizer options
-    model = Model(with_optimizer(optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"));
+    model = Model(optimizer);
 
     params = generate_parameters(config);
 
