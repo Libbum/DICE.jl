@@ -216,7 +216,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Backstop price: $(opt.pbacktime)");
     println(io, "Growth rate of productivity: $(opt.gₐ)");
     println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(JuMP.value(opt.rr))");
+    println(io, "Avg utility social discout rate: $(JuMP.value.(opt.rr))");
     println(io, "Base case carbon price: $(opt.cpricebase)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
@@ -224,7 +224,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(JuMP.value(opt.partfract))");
+    print(io, "Fraction of emissions in control regieme: $(JuMP.value.(opt.partfract))");
 end
 
 @extend struct RockyRoadEquations <: Equations
