@@ -41,6 +41,18 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 Suggestions and additions welcomed.
 
+## A note on Julia versions
+
+For anyone interested in this tool and has not used Julia before, you'll need a bit of additional information before you start.
+Julia 1.0 has only recently been released, and as such the community is in the process of porting code from the older version 0.64.
+This task, for the most part, is fairly trivial and has mostly been completed.
+One important package (JuMP) however has been implementing fundamental changes in its architecture, and the Julia 1.0 release has therefore came at quite an awkward time.
+JuMP's next release is now estimated to be about a month away (time of writing Dec 13 2018).
+For now, there are still teething problems with the current master branch, meaning DICE.jl [has not yet transitioned](https://github.com/Libbum/DICE.jl/pull/16) to the latest version, and therefore does not run on Julia 1.0 just yet.
+
+Please install [version 0.64](https://julialang.org/downloads/oldreleases.html) for the moment.
+This issue will be rectified as soon as possible.
+
 ## Usage
 
 Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP.jl) and a NLP solver.
