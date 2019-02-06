@@ -1,21 +1,29 @@
-immutable V2016R <: Version end
+immutable V2016R{D<:Damage} <: Version
+    damage::D
+end
 
-Base.show(io::IO, v::V2016R) = print(io, "v2016R beta")
+Base.show(io::IO, v::V2016R) = print(io, "v2016R beta, with the $(v.damage) damage function")
 
 """
-    v2016R()
+    v2016R([damage])
 
 Identifier for the 2016R beta version of the model.
+Defaults to the `Default` damage function, but also accepts `TippingPoint`.
 Note that this is a beta version following `DICE2016R-091916ap.gms`.
 
 # Examples
 ```jldoctest
 julia> v2016R()
-v2016R beta
+v2016R beta with the Default damage function
+```
+
+```jldoctest
+julia> v2016R(TippingPoint)
+v2016R beta with the Tipping Point damage function
 ```
 """
-function v2016R()
-    V2016R()
+function v2016R(damage::D = Default) where {D<:Damage}
+    V2016R{D}(damage)
 end
 
 export v2016R
@@ -125,7 +133,7 @@ end
     cumtree::Array{Float64,1} # Cumulative from land
 end
 
-function generate_parameters(c::OptionsV2016, model::JuMP.Model)
+function generate_parameters(c::OptionsV2016, damage::Damage, model::JuMP.Model)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -135,7 +143,11 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
 
-    @NLparameter(model, ψ₂ == c.ψ₂);
+    if typeof(damage) == EnvironmentalGoodsDamage
+        @NLparameter(model, ψ₂ == c.ψ₂);
+    else
+        @NLparameter(model, ψ₂ == c.ψ₂);
+    end
 
     # Backstop price
     pbacktime = Array{Float64}(c.N);
@@ -267,7 +279,7 @@ end
 end
 
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(damage::Damage, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -279,7 +291,16 @@ function model_eqs(model::JuMP.Model, config::OptionsV2016, params::ParametersV2
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
     # Equation for damage fraction
-    @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    if typeof(damage) == TippingPointDamage
+        @NLconstraint(model, [i=1:N], vars.Ω[i] == (0.0489*vars.Tₐₜ[i])^config.ψ₃+(0.164*vars.Tₐₜ[i])^6.754);
+    elseif typeof(damage) == EnvironmentalGoodsDamage
+        @NLconstraint(model, [i=1:N], vars.Ω[i] == params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    else
+        #Default or FractionProductiviy
+        @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
+    end
+    # vars.Ω .* 0.05 
+    #@NLconstraint(model, [i=1:N], vars.ΩY[i] == 1-((1-Ω[t])/(1-f(1-Ω[t]))));
     # Damage equation
     @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
@@ -350,7 +371,7 @@ function solve(scenario::Scenario, version::V2016R;
     solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
 
     model = JuMP.Model(solver = solver);
-    params = generate_parameters(config, model);
+    params = generate_parameters(config, version.damage, model);
 
     # Rate limit
     μ_ubound = [if t < 30 1.0 else config.limμ end for t in 1:config.N];
@@ -358,9 +379,9 @@ function solve(scenario::Scenario, version::V2016R;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(model, config, params, variables);
+    equations = model_eqs(version.damage, model, config, params, variables);
 
-    assign_scenario(scenario, model, config, params, variables);
+    assign_scenario(scenario, version.damage, model, config, params, variables);
 
     JuMP.solve(model);
     JuMP.solve(model);

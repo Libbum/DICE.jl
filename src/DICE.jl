@@ -20,6 +20,10 @@ include("BaseTypes.jl")
 abstract type Scenario end
 include("Scenarios.jl")
 
+#Damage Functions
+abstract type Damage end
+include("Damages.jl")
+
 struct DICENarrative
     constants::Options
     parameters::Parameters
