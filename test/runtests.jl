@@ -122,8 +122,6 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
             @test JuMP.value(rr_params.α) ≈ 2.1
             DICE.assign_scenario(Copenhagen, modelrr, rr_opt, rr_params, rr_vars);
             @test JuMP.value(rr_params.partfract[2]) ≈ 0.390423082
-            @test JuMP.getlowerbound(rr_vars.μ[3]) ≈ 0.110937151
-            @test JuMP.upper_bound(rr_vars.μ[3]) ≈ 0.110937151
         end
         @testset "2016R beta" begin
             DICE.assign_scenario(BasePrice, model2016, v2016_opt, v2016_params, v2016_vars);
@@ -133,23 +131,23 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
         end
     end
     @testset "Invalid Scenarios" begin
-        @test_throws ErrorException solve(Limit2Degrees, v2013R())
-        @test_throws ErrorException solve(Stern, v2013R())
-        @test_throws ErrorException solve(SternCalibrated, v2013R())
-        @test_throws ErrorException solve(Copenhagen, v2013R())
-        @test_throws ErrorException solve(Limit2Degrees, v2016R())
-        @test_throws ErrorException solve(Stern, v2016R())
-        @test_throws ErrorException solve(SternCalibrated, v2016R())
-        @test_throws ErrorException solve(Copenhagen, v2016R())
+        @test_throws ErrorException DICE.solve(Limit2Degrees, v2013R())
+        @test_throws ErrorException DICE.solve(Stern, v2013R())
+        @test_throws ErrorException DICE.solve(SternCalibrated, v2013R())
+        @test_throws ErrorException DICE.solve(Copenhagen, v2013R())
+        @test_throws ErrorException DICE.solve(Limit2Degrees, v2016R())
+        @test_throws ErrorException DICE.solve(Stern, v2016R())
+        @test_throws ErrorException DICE.solve(SternCalibrated, v2016R())
+        @test_throws ErrorException DICE.solve(Copenhagen, v2016R())
     end
 end
 
 # Optimisation tests.
-base = solve(BasePrice, v2013R(), optimizer = optimizer);
+base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
         @test base.results.UTILITY ≈ 2670.2779245830334
-        result = solve(OptimalPrice, v2013R(), optimizer = optimizer);
+        result = DICE.solve(OptimalPrice, v2013R(), optimizer = optimizer);
         #For some unknown reason, the optimal solution becomes infeasable on travis.
         # See issue #8.
         if get(ENV, "TRAVIS", "false") == "true"
@@ -161,23 +159,23 @@ base = solve(BasePrice, v2013R(), optimizer = optimizer);
     @testset "2013R (RockyRoad)" begin
         #NOTE: None of these values have been verified yet.
         # See issue #3. Have set some to broken to remember this.
-        result = solve(BasePrice, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(BasePrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2670.362568216809
-        result = solve(OptimalPrice, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(OptimalPrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2741.230618094657
-        result = solve(Limit2Degrees, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(Limit2Degrees, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2695.487309594252
-        result = solve(Stern, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(Stern, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 124390.42213103821
-        result = solve(SternCalibrated, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(SternCalibrated, v2013R(RockyRoad), optimizer = optimizer);
         @test_broken result.results.UTILITY ≈ 9001.0
-        result = solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
+        result = DICE.solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2725.414606616763
     end
     @testset "2016R beta" begin
-        result = solve(BasePrice, v2016R(), optimizer = optimizer);
+        result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4493.8420532623495
-        result = solve(OptimalPrice, v2016R(), optimizer = optimizer);
+        result = DICE.solve(OptimalPrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4522.257183520258
     end
 end
