@@ -1,9 +1,7 @@
 module DICE
 
 #Don't polute the namespace. We want to use `solve` ourselves.
-import JuMP;
-import JuMP: @variable, @constraint, @NLconstraint, @objective, @NLparameter;
-import JuMP: getvalue, setvalue, getdual, setupperbound, setlowerbound;
+using JuMP;
 #Ipopt is distributed under the EPL.
 #We don't package it here though, and assume you have this set up on your system already.
 using Ipopt;

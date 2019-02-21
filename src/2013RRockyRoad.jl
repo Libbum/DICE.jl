@@ -1,4 +1,4 @@
-@extend immutable RockyRoadOptions <: Options
+@extend struct RockyRoadOptions <: Options
     e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
     μ₀::Float64 #Initial emissions control rate for base case 2010
     tnopol::Float64 #Period before which no emissions controls base
@@ -108,7 +108,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-@extend immutable RockyRoadParameters <: Parameters
+@extend struct RockyRoadParameters <: Parameters
     pbacktime::Array{Float64,1} # Backstop price
     cpricebase::Array{Float64,1} # Carbon price in base case
     ξ₁::Float64
@@ -120,7 +120,7 @@ end
     partfract::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
 end
 
-function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
+function generate_parameters(c::RockyRoadOptions, model::Model)
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
@@ -139,15 +139,15 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     @NLparameter(model, rr[i=1:c.N] == 1/((1+c.ρ)^(c.tstep*(i-1))));
 
     # Backstop price
-    pbacktime = Array{Float64}(c.N);
+    pbacktime = Array{Float64}(undef, c.N);
     # Growth rate of productivity from 0 to N
-    gₐ = Array{Float64}(c.N);
+    gₐ = Array{Float64}(undef, c.N);
     # Emissions from deforestation
-    Etree = Array{Float64}(c.N);
+    Etree = Array{Float64}(undef, c.N);
     # Carbon price in base case
-    cpricebase = Array{Float64}(c.N);
+    cpricebase = Array{Float64}(undef, c.N);
     # Exogenous forcing for other greenhouse gases
-    fₑₓ = Array{Float64}(c.N);
+    fₑₓ = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         pbacktime[i] = c.pback*(1-c.gback)^(i-1);
@@ -163,16 +163,16 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
 
     # Initial conditions and offset required
     # Level of population and labor
-    L = Array{Float64}(c.N);
+    L = Array{Float64}(undef, c.N);
     L[1] = c.pop₀;
     # Level of total factor productivity
-    A = Array{Float64}(c.N);
+    A = Array{Float64}(undef, c.N);
     A[1] = c.a₀;
     # Change in sigma (cumulative improvement of energy efficiency)
-    gσ = Array{Float64}(c.N);
+    gσ = Array{Float64}(undef, c.N);
     gσ[1] = c.gσ₁;
     # CO2-equivalent-emissions output ratio
-    σ = Array{Float64}(c.N);
+    σ = Array{Float64}(undef, c.N);
     σ[1] = σ₀;
 
 
@@ -184,13 +184,13 @@ function generate_parameters(c::RockyRoadOptions, model::JuMP.Model)
     end
 
     # Adjusted cost for backstop (Needs σ, hence a separate loop)
-    θ₁ = Array{Float64}(c.N);
+    θ₁ = Array{Float64}(undef, c.N);
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
     end
 
     # Fraction of emissions in control regime
-    pfract = Array{Float64}(c.N);
+    pfract = Array{Float64}(undef, c.N);
     for i in 1:c.N
         pfract[i] = if i <= c.periodfullpart
                             c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
@@ -207,7 +207,7 @@ end
 #TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
-    println(io, "Optimal savings rate: $(getvalue(opt.optlrsav))");
+    println(io, "Optimal savings rate: $(value(opt.optlrsav))");
     println(io, "Carbon cycle transition matrix coefficients");
     println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
     println(io, "2010 Carbon intensity: $(opt.σ₀)");
@@ -216,7 +216,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Backstop price: $(opt.pbacktime)");
     println(io, "Growth rate of productivity: $(opt.gₐ)");
     println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(getvalue(opt.rr))");
+    println(io, "Avg utility social discout rate: $(value.(opt.rr))");
     println(io, "Base case carbon price: $(opt.cpricebase)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
@@ -224,14 +224,14 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(getvalue(opt.partfract))");
+    print(io, "Fraction of emissions in control regieme: $(value.(opt.partfract))");
 end
 
 @extend struct RockyRoadEquations <: Equations
-    yy::Array{JuMP.ConstraintRef,1} # Output net equation
+    yy::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output net equation
 end
 
-function model_eqs(model::JuMP.Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
@@ -289,7 +289,7 @@ function model_eqs(model::JuMP.Model, config::RockyRoadOptions, params::RockyRoa
 
     # Savings rate for asympotic equilibrium
     # We need to get the value to use the .== construct here.
-    @constraint(model, vars.S[i=N-10:N] .== getvalue(params.optlrsav));
+    @constraint(model, vars.S[N-10:N] .== value(params.optlrsav));
     # Initial conditions
     @constraint(model, vars.CCA[1] == 90.0);
     @constraint(model, vars.K[1] == config.k₀);
@@ -311,13 +311,13 @@ include("ScenariosRockyRoad.jl")
 
 function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = options(version),
-    solver = IpoptSolver(print_level=3, max_iter=99900,print_frequency_iter=50,sb="yes"))
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    model = Model(optimizer);
 
-    model = JuMP.Model(solver = solver);
     params = generate_parameters(config, model);
 
     # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ*getvalue(params.partfract[t]) end for t in 1:config.N];
+    μ_ubound = [if t < 30 1.0 else config.limμ*value(params.partfract[t]) end for t in 1:config.N];
     cprice_ubound = fill(Inf, config.N); #No initial price bound
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
@@ -326,8 +326,8 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     assign_scenario(scenario, model, config, params, variables);
 
-    JuMP.solve(model);
-    JuMP.solve(model);
+    optimize!(model);
+    optimize!(model);
 
     results = model_results(model, config, params, variables, equations);
 
