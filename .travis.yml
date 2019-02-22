@@ -14,18 +14,3 @@ addons:
   apt:
     packages:
       - gfortran
-# script:
-#   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("DICE"); Pkg.test("DICE"; coverage=true)'
-# after_success:
-#   # Upload docs
-#   - |
-#       if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_JULIA_VERSION" == "0.6"  && "$TRAVIS_PULL_REQUEST" = "false" && "$TRAVIS_BRANCH" == "master" ]]; then
-#         julia -e 'Pkg.add("Documenter")'
-#         julia -e 'cd(Pkg.dir("DICE")); include(joinpath("docs", "make.jl"))'
-#       fi
-#   # Coverage report
-#   - |
-#       if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_JULIA_VERSION" == "0.6" ]]; then
-#         julia -e 'cd(Pkg.dir("DICE")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-#       fi
