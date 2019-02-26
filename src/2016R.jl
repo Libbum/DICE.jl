@@ -256,7 +256,7 @@ function model_vars(version::V2016R, model::Model, N::Int64, cca_ubound::Float64
     @variable(model, CCA[1:N] <= cca_ubound); # Cumulative industrial carbon emissions (GTC)
     @variable(model, CCATOT[1:N]); # Total carbon emissions (GTC)
     @variable(model, PERIODU[1:N]); # One period utility function
-    @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2010$ per ton of CO2)
+    @variable(model, CPRICE[i=1:N]); # Carbon price (2010$ per ton of CO2)
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
@@ -281,7 +281,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Equation for damage fraction
     @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
-    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
+    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
     @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂);
     # Equation for MC abatement
@@ -291,15 +291,15 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Output gross equation
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
-    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
+    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
     # Output net equation
-    @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
     # Consumption equation
-    cc = @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    cc = @NLconstraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    @NLconstraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Savings rate equation
-    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
+    @NLconstraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
     @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
@@ -319,7 +319,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Temperature-climate equation for lower oceans
     @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
-    @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
+    @NLconstraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
@@ -362,8 +362,6 @@ function solve(scenario::Scenario, version::V2016R;
 
     assign_scenario(scenario, model, config, params, variables);
 
-    optimize!(model);
-    optimize!(model);
     optimize!(model);
 
     results = model_results(model, config, params, variables, equations);
