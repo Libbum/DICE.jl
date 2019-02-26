@@ -10,6 +10,7 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV201
     for i in 1:config.N
         if i <= config.tnopol
             JuMP.set_upper_bound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
+            println(max(photel[i],params.cpricebase[i]));
         end
     end
 end
