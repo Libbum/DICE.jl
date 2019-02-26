@@ -6,6 +6,10 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV201
 
     photel = value.(vars.CPRICE);
 
+    for i in 1:config.N
+        println(photel[i]);
+    end
+
     JuMP.set_value(params.ψ₂, config.ψ₂);
     for i in 1:config.N
         if i <= config.tnopol
