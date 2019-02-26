@@ -1,6 +1,6 @@
 function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     # We add the first solve since our run is infeasible without it.
-    optimize!(model);
+#    optimize!(model);
     JuMP.set_value(params.ψ₂, 0.0);
     optimize!(model);
 
