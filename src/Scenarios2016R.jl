@@ -1,20 +1,23 @@
 function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     # We add the first solve since our run is infeasible without it.
 #    optimize!(model);
+    println(value(params.ψ₂));
     JuMP.set_value(params.ψ₂, 0.0);
+    println(value(params.ψ₂));
     optimize!(model);
 
     photel = value.(vars.CPRICE);
 
-    for i in 1:config.N
-        println(photel[i]);
-    end
+#    for i in 1:config.N
+#        println(photel[i]);
+#    end
 
     JuMP.set_value(params.ψ₂, config.ψ₂);
+    println(value(params.ψ₂));
     for i in 1:config.N
         if i <= config.tnopol
             JuMP.set_upper_bound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
-            println(max(photel[i],params.cpricebase[i]));
+#            println(max(photel[i],params.cpricebase[i]));
         end
     end
 end
