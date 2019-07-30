@@ -258,7 +258,7 @@ function model_eqs(model::Model, config::VanillaOptions, params::VanillaParamete
     # Temperature-climate equation for lower oceans
     @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
-    @constraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
+    @NLconstraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
@@ -266,7 +266,7 @@ function model_eqs(model::Model, config::VanillaOptions, params::VanillaParamete
     @constraint(model, vars.S[51:N] .== params.optlrsav);
     # Initial conditions
     @constraint(model, vars.CCA[1] == 90.0);
-    @constraint(model, vars.K[1] == config.k₀);
+    @NLconstraint(model, vars.K[1] == config.k₀);
     @constraint(model, vars.Mₐₜ[1] == config.mat₀);
     @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
     @constraint(model, vars.Mₗₒ[1] == config.ml₀);
