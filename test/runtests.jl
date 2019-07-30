@@ -125,7 +125,7 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
         end
         @testset "2016R beta" begin
             DICE.assign_scenario(BasePrice, model2016, v2016_opt, v2016_params, v2016_vars);
-            @test all(x->isfinite.(JuMP.upper_bound.(v2016_vars.CPRICE)[x]), 1:Int(v2016_opt.tnopol))
+            @test all(x->JuMP.has_upper_bound.(v2016_vars.CPRICE)[x], 1:Int(v2016_opt.tnopol))
             DICE.assign_scenario(OptimalPrice, model2016, v2016_opt, v2016_params, v2016_vars);
             @test JuMP.upper_bound(v2016_vars.μ[1]) == v2016_opt.μ₀
         end
@@ -173,8 +173,8 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2725.414606616763
     end
     @testset "2016R beta" begin
-        #result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
-        #@test result.results.UTILITY ≈ 4493.8420532623495
+        result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
+        @test result.results.UTILITY ≈ 4493.8420532623495
         result = DICE.solve(OptimalPrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4522.257183520258
     end
@@ -182,5 +182,5 @@ end
 
 #Show model
 @testset "Display" begin
-    @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nA JuMP Model\nMaximization problem with:\nVariables: 1561\nObjective function type: VariableRef\n`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 720 constraints\n`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 300 constraints\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 672 constraints\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.LessThan{Float64}`: 59 constraints\n`GenericQuadExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 240 constraints\nNonlinear: 479 constraints\nModel mode: AUTOMATIC\nCachingOptimizer state: ATTACHED_OPTIMIZER\nSolver name: SolverName() attribute not implemented by the optimizer.\nNames registered in the model: C, CCA, CEMUTOTPER, CPC, CPRICE, DAMAGES, E, Eind, FORC, I, K, MCABATE, Mᵤₚ, Mₐₜ, Mₗₒ, PERIODU, RI, S, Tₐₜ, Tₗₒ, UTILITY, Y, YGROSS, YNET, Λ, Ω, μ"
+    @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nA JuMP Model\nMaximization problem with:\nVariables: 1561\nObjective function type: VariableRef\n`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 720 constraints\n`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 300 constraints\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 671 constraints\n`GenericQuadExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 240 constraints\nNonlinear: 539 constraints\nModel mode: AUTOMATIC\nCachingOptimizer state: ATTACHED_OPTIMIZER\nSolver name: SolverName() attribute not implemented by the optimizer.\nNames registered in the model: C, CCA, CEMUTOTPER, CPC, CPRICE, DAMAGES, E, Eind, FORC, I, K, MCABATE, Mᵤₚ, Mₐₜ, Mₗₒ, PERIODU, RI, S, Tₐₜ, Tₗₒ, UTILITY, Y, YGROSS, YNET, Λ, Ω, μ"
 end
