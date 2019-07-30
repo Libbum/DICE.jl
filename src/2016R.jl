@@ -327,7 +327,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     @constraint(model, vars.S[N-10:N] .== params.optlrsav);
     # Initial conditions
     @constraint(model, vars.CCA[1] == 400.0);
-    @constraint(model, vars.K[1] == config.k₀);
+    @NLconstraint(model, vars.K[1] == config.k₀);
     @constraint(model, vars.Mₐₜ[1] == config.mat₀);
     @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
     @constraint(model, vars.Mₗₒ[1] == config.ml₀);
