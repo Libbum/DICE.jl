@@ -7,57 +7,105 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 ## Models
 
-For now, the Vanilla 2013R version is the only one residing here, more are on their way.
+**Implemented**
+- v2013R (Vanilla Version)
+- v2016R Beta
+
+**In testing phase**
+- v2013R (Rocky Road Version)
+- v2016R2 (see [this](https://github.com/Libbum/DICE.jl/issues/4) issue)
+- DICE-CJL
+
+**Planned**
+-  van der Ploeg safe carbon budget
 
 ## Usage
 
 Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP.jl) and a NLP solver.
-We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
-Detailed instructions of setting these dependencies up on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
 
-Once these prerequisites are configured, install the module via
+We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
+If you don't have these packages on your system, they will be installed when you add this package.
+
+The current recommendation however, is to use the latest version of the Ipopt solver (at time of writing: 3.12.13).
+If you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated.
+Then, add the following to your `~/.julia/config/startup.jl` file (create one if it doesn't exist)
 
 ```julia
-Pkg.clone("git://github.com/Libbum/DICE.jl.git")
+ENV["JULIA_IPOPT_LIBRARY_PATH"] = "/usr/lib"
+ENV["JULIA_IPOPT_EXECUTABLE_PATH"] = "/usr/bin"
+```
+
+Other distributions may use a different path, so it would be useful to check `which ipopt` to verify the correct path here.
+
+If you've already built Ipopt.jl with the bundled version, simply build it again once your environment is set
+
+```shell
+julia> import Pkg; Pkg.build("Ipopt")
+```
+
+---
+
+Detailed instructions of setting up other solvers on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
+
+### Notebooks
+
+Self contained notebooks can be found in a separate [DICE.jl-notebooks](https://github.com/Libbum/DICE.jl-notebooks) repository that run default instances of each model, plot the major results and compare the output with original source data (where available).
+
+The best way to use these is to run a notebook server from a cloned copy of this repository:
+
+```shell
+$ git clone git@github.com:Libbum/DICE.jl-notebooks.git
+$ cd DICE.jl-notebooks
+$ jupyter notebook
+```
+
+and follow the generated link to your browser.
+If you don't need to interact with the notebook and are just curious about the output then github renders notebooks natively.
+You can just click on them and read through the output.
+All notebooks are stored in a previously executed state, with all outputs rendered.
+
+### Module
+
+Using the module gives your greater control over the inputs of the system, and ultimately allows you to compare different versions of the model with the same input data (if possible and permitted).
+
+Create a new project and install the DICE module. For the moment it is not in METADATA, so add it via the repository directly:
+
+```shell
+$ cd /path/to/projects/
+$ julia
+julia> ]
+(v1.1) pkg> generate MyProject
+julia> ;
+shell> cd MyProject
+(v1.1) pkg> activate .
+(MyProject) pkg> add https://github.com/Libbum/DICE.jl
 ```
 
 The simplest of files to run the default solution looks like this:
 
 ```julia
-using JuMP;
 using DICE;
 
-dice = vanilla_2013R();
-solve(dice.model);
-getvalue(dice.UTILITY)
+dice = solve(OptimalPrice, v2013R());
+dice.results.UTILITY
 ```
 
 A more fleshed out example, enabling you to alter the configuration is also simple enough:
 
 ```julia
-using JuMP;
-using Ipopt;
 using DICE;
+import JuMP;
+using Ipopt;
 using Plots;
 unicodeplots()
 
-conf = vanilla_2013R_options(cpriceopt = false); #Using base carbon price
-ipopt = IpoptSolver(print_level=0)); #Don't print output when optimising solution
-dice = vanilla_2013R(config = conf, solver = ipopt);
+version = v2013R(); #Vanilla flavour
+conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
+ipopt = JuMP.with_optimizer(Ipopt.Optimizer, print_level=0) #Don't print output when optimising solution
+dice = solve(BasePrice, version, config = conf, optimizer = ipopt);
 
-# Solve multiple times using previous endpoings as starting solution
-status1 = solve(dice.model);
-status2 = solve(dice.model);
-status3 = solve(dice.model);
-
-tatm = getvalue(dice.Tₐₜ); # Atmospheric Temperature (deg C above preindustrial)
-forc = getvalue(dice.FORC); # Total Increase in Forcing (Watts per Meter2, preindustrial)
-tocean = getvalue(dice.Tₗₒ); # Lower Ocean Temperature (deg C above preindustrial)
-# Calculate social cost of carbon
-scc = -1000.0.*getdual(dice.eeq)./getdual(dice.cc);
-
-years = 2005+(dice.constants.tstep*(1:dice.constants.N)); # Set up a valid time axis
-plot(years,scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
+r = dice.results;
+plot(r.years,r.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
 ```
 
 yielding the estimated global cost of carbon emissions out to 2300 without an optimal carbon price
