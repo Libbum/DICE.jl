@@ -269,6 +269,8 @@ end
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
 function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
+    scale = 5/3.666;
+
     # Equations #
     # Emissions Equation
     eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
@@ -307,9 +309,9 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
 
     # Equations (offset) #
     # Cumulative carbon emissions
-    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*(5/3.666));
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*scale);
     # Atmospheric concentration equation
-    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
+    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*scale);
     # Lower ocean concentration
     @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
     # Shallow ocean concentration
