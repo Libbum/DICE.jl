@@ -1,9 +1,21 @@
 using Documenter, DICE
 
-makedocs()
+makedocs(
+    modules = [DICE],
+    doctest = true,
+    format = Documenter.HTML(prettyurls=!("local" in ARGS)),
+    sitename = "DICE.jl",
+    authors = "Tim DuBois",
+    linkcheck = false,
+    pages = [
+        "Home" => "index.md",
+        "API" => "api.md",
+    ],
+)
 
 deploydocs(
-    deps   = Deps.pip("mkdocs", "python-markdown-math"),
     repo   = "github.com/Libbum/DICE.jl.git",
-    julia  = "1.1"
+    target = "build",
+    make   = nothing,
+    deps   = nothing,
 )
