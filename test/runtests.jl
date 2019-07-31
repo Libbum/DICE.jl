@@ -146,15 +146,14 @@ end
 base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
-        @test base.results.UTILITY ≈ 2670.2779245830334
-        result = DICE.solve(OptimalPrice, v2013R(), optimizer = optimizer);
-        #For some unknown reason, the optimal solution becomes infeasable on travis.
-        # See issue #8.
+        # Will fail on 3.12.10, so don't run if using Travis
         if get(ENV, "TRAVIS", "false") == "true"
-            @test_broken result.results.UTILITY ≈ 2690.244712873159
+            @test_broken result.results.UTILITY ≈ 2670.2779245830334
         else
-            @test result.results.UTILITY ≈ 2690.244712873159
+            @test base.results.UTILITY ≈ 2670.2779245830334
         end
+        result = DICE.solve(OptimalPrice, v2013R(), optimizer = optimizer);
+        @test result.results.UTILITY ≈ 2690.244712873159
     end
     @testset "2013R (RockyRoad)" begin
         #NOTE: None of these values have been verified yet.
@@ -173,8 +172,11 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2725.414606616763
     end
     @testset "2016R beta" begin
-        result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
-        @test result.results.UTILITY ≈ 4493.8420532623495
+        # Will fail on 3.12.10, so don't run if using Travis
+        if get(ENV, "TRAVIS", "false") == "false"
+            result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
+            @test result.results.UTILITY ≈ 4493.8420532623495
+        end
         result = DICE.solve(OptimalPrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4522.257183520258
     end
