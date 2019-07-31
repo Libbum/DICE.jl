@@ -1,10 +1,10 @@
 # Originaly from https://github.com/tbreloff/ConcreteAbstractions.jl
-# released under MIT. Slightly modified to function with recent Julia versions.
+# released under MIT. Modified to function with recent Julia versions.
 
 const _base_types = Dict{Symbol, Tuple}()
 
 macro base(typeexpr::Expr)
-    @assert typeexpr.head == :type
+    @assert typeexpr.head == :struct
     mutable, nameblock, args = typeexpr.args
 
     # extract name and parameters
@@ -22,7 +22,7 @@ macro base(typeexpr::Expr)
 end
 
 macro extend(typeexpr::Expr)
-    @assert typeexpr.head == :type
+    @assert typeexpr.head == :struct
     mutable, nameblock, args = typeexpr.args
 
     # create a curly expression for the new type and grab the base name

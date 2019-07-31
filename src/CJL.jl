@@ -1,4 +1,4 @@
-immutable VCJL <: Version end
+struct VCJL <: Version end
 
 Base.show(io::IO, v::VCJL) = print(io, "CJL")
 
@@ -19,7 +19,7 @@ end
 
 export vCJL
 
-@extend immutable OptionsVCJL <: Options
+@extend struct OptionsVCJL <: Options
     δσ₂::Float64 #Quadratic term in decarbonization
     σ₀::Float64 #CO₂-equivalent emissions-GNP ratio 2005
     backrat::Float64 #atio initial to final backstop cost
@@ -118,7 +118,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsVCJL)
 end
 
 
-@extend immutable ParametersVCJL <: Parameters
+@extend struct ParametersVCJL <: Parameters
     rr::Array{Float64,1} # Average utility social discount rate
     partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
@@ -134,17 +134,17 @@ function generate_parameters(c::OptionsVCJL)
 
     # Growth factor population
     #NOTE: This is only a helper function for L, so we don't include it in the Narrative anywhere.
-    gfacpop = Array{Float64}(c.N);
+    gfacpop = Array{Float64}(undef, c.N);
     # Level of population and labor
-    L = Array{Float64}(c.N);
+    L = Array{Float64}(undef, c.N);
     # Growth rate of productivity from 0 to N
-    gₐ = Array{Float64}(c.N);
+    gₐ = Array{Float64}(undef, c.N);
     # Change in sigma (cumulative improvement of energy efficiency)
-    gσ = Array{Float64}(c.N);
+    gσ = Array{Float64}(undef, c.N);
     # Emissions from deforestation
-    Etree = Array{Float64}(c.N);
+    Etree = Array{Float64}(undef, c.N);
     # Average utility social discount rate
-    rr = Array{Float64}(c.N);
+    rr = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         gfacpop[i] = (exp.(c.popadj*(i-1))-1)/exp.(c.popadj*(i-1));
@@ -157,10 +157,10 @@ function generate_parameters(c::OptionsVCJL)
 
     # Initial conditions and offset required
     # Level of total factor productivity
-    A = Array{Float64}(c.N);
+    A = Array{Float64}(undef, c.N);
     A[1] = c.a₀;
     # CO2-equivalent-emissions output ratio
-    σ = Array{Float64}(c.N);
+    σ = Array{Float64}(undef, c.N);
     σ[1] = σ₀;
 
     for i in 1:c.N-1
@@ -169,11 +169,11 @@ function generate_parameters(c::OptionsVCJL)
     end
 
     # Adjusted cost for backstop
-    θ₁ = Array{Float64}(c.N);
+    θ₁ = Array{Float64}(undef, c.N);
     # Exogenous forcing for other greenhouse gases
-    fₑₓ = Array{Float64}(c.N);
+    fₑₓ = Array{Float64}(undef, c.N);
     # Fraction of emissions in control regime
-    partfract = Array{Float64}(c.N);
+    partfract = Array{Float64}(undef, c.N);
 
     for i in 1:c.N
         θ₁[i] = (c.pback*σ[i]/c.θ₂)*((c.backrat-1+exp.(-c.gback*(i-1)))/c.backrat);
@@ -211,8 +211,8 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersVCJL)
 end
 
 @extend struct VariablesVCJL <: Variables
-    MₐₜAV::Array{JuMP.Variable,1} # Average concentrations
-    PCY::Array{JuMP.Variable,1} # Per capita income thousands US dollars
+    MₐₜAV::Array{VariableRef,1} # Average concentrations
+    PCY::Array{VariableRef,1} # Per capita income thousands US dollars
 end
 
 function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Float64, μ_ubound::Float64)
@@ -244,10 +244,10 @@ function model_vars(version::VCJL, model::JuMP.Model, N::Int64, cca_ubound::Floa
 end
 
 @extend struct EquationsVCJL <: Equations
-    kk::Array{JuMP.ConstraintRef,1} # Capital balance equation
+    kk::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Capital balance equation
 end
 
-function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+function model_eqs(model::Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -319,10 +319,10 @@ function model_eqs(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJ
 end
 
 # Just put the default into OptimalPrice for the moment.
-function assign_scenario(s::OptimalPriceScenario, model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+function assign_scenario(s::OptimalPriceScenario, model::Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
 end
 
-function assign_scenario(s::Scenario, model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
+function assign_scenario(s::Scenario, model::Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL)
     error("$(s) is not a valid scenario for DICE-CJL");
 end
 
@@ -333,36 +333,36 @@ end
     mcemis::Array{Float64,1} #Unsure: TODO
 end
 
-function model_results(model::JuMP.Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL, eqs::EquationsVCJL)
+function model_results(model::Model, config::OptionsVCJL, params::ParametersVCJL, vars::VariablesVCJL, eqs::EquationsVCJL)
     years = 2005+(1:config.N); # TODO: check this
-    Mₐₜ = getvalue(vars.Mₐₜ);
-    MₐₜAV = getvalue(vars.MₐₜAV);
-    Mₐₜppm = getvalue(vars.Mₐₜ)/2.13;
-    Mᵤₚ = getvalue(vars.Mᵤₚ);
-    Mₗₒ = getvalue(vars.Mₗₒ);
-    CCA = getvalue(vars.CCA);
-    CCAratio = getvalue(vars.CCA)/config.fosslim;
-    Tₐₜ = getvalue(vars.Tₐₜ);
-    FORC = getvalue(vars.FORC);
-    Tₗₒ = getvalue(vars.Tₗₒ);
-    YGROSS = getvalue(vars.YGROSS);
-    DAMAGES = getvalue(vars.DAMAGES);
-    YNET = getvalue(vars.YNET);
-    MCABATE = getvalue(vars.MCABATE);
-    Y = getvalue(vars.Y);
-    E = getvalue(vars.E);
-    I = getvalue(vars.I);
-    K = getvalue(vars.K);
-    PCY = getvalue(vars.PCY)
+    Mₐₜ = value.(vars.Mₐₜ);
+    MₐₜAV = value.(vars.MₐₜAV);
+    Mₐₜppm = value.(vars.Mₐₜ)/2.13;
+    Mᵤₚ = value.(vars.Mᵤₚ);
+    Mₗₒ = value.(vars.Mₗₒ);
+    CCA = value.(vars.CCA);
+    CCAratio = value.(vars.CCA)/config.fosslim;
+    Tₐₜ = value.(vars.Tₐₜ);
+    FORC = value.(vars.FORC);
+    Tₗₒ = value.(vars.Tₗₒ);
+    YGROSS = value.(vars.YGROSS);
+    DAMAGES = value.(vars.DAMAGES);
+    YNET = value.(vars.YNET);
+    MCABATE = value.(vars.MCABATE);
+    Y = value.(vars.Y);
+    E = value.(vars.E);
+    I = value.(vars.I);
+    K = value.(vars.K);
+    PCY = value.(vars.PCY)
     MPK = config.γₑ.*YGROSS./K;
-    C = getvalue(vars.C);
-    CPC = getvalue(vars.CPC);
-    PERIODU = getvalue(vars.PERIODU);
-    UTILITY = getvalue(vars.UTILITY);
-    S = getvalue(vars.S);
-    μ = getvalue(vars.μ);
-    RI = getvalue(vars.RI);
-    scc = -1000.*getdual(eqs.eeq)./(getdual(eqs.kk)+.00000000001);
+    C = value.(vars.C);
+    CPC = value.(vars.CPC);
+    PERIODU = value.(vars.PERIODU);
+    UTILITY = value.(vars.UTILITY);
+    S = value.(vars.S);
+    μ = value.(vars.μ);
+    RI = value.(vars.RI);
+    scc = -1000 .* dual.(eqs.eeq)./(dual.(eqs.kk) .+ 0.00000000001);
     mcemis = config.θ₂.*params.θ₁.*μ.^(config.θ₂-1)./params.σ.*1000.;
     ResultsVCJL(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,MCABATE,MₐₜAV,PCY,mcemis)
@@ -372,9 +372,9 @@ end
 
 function solve(scenario::Scenario, version::VCJL;
     config::OptionsVCJL = options(version),
-    solver = IpoptSolver(print_level=5, max_iter=99900,print_frequency_iter=50,sb="yes"))
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    model = Model(optimizer);
 
-    model = JuMP.Model(solver = solver);
 
     params = generate_parameters(config);
 
@@ -384,12 +384,12 @@ function solve(scenario::Scenario, version::VCJL;
 
     equations = model_eqs(model, config, params, variables);
 
-    JuMP.solve(model);
-    #JuMP.solve(model);
-    #JuMP.solve(model);
-    #JuMP.solve(model);
-    #JuMP.solve(model);
-    #JuMP.solve(model);
+    optimize!(model);
+    #optimize!(model);
+    #optimize!(model);
+    #optimize!(model);
+    #optimize!(model);
+    #optimize!(model);
 
     #results = model_results(model, config, params, variables, equations);
 

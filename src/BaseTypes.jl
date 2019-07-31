@@ -1,4 +1,4 @@
-@base type Options
+@base mutable struct Options
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
@@ -46,7 +46,7 @@
     scale2::Float64 #Additive scaling coefficient
 end
 
-@base type Parameters
+@base mutable struct Parameters
     ϕ₁₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 # Carbon cycle transition matrix coefficient
     ϕ₂₂::Float64 # Carbon cycle transition matrix coefficient
@@ -64,41 +64,41 @@ end
     fₑₓ::Array{Float64,1} # Exogenous forcing for other greenhouse gases
 end
 
-@base type Variables
-    μ::Array{JuMP.Variable,1} # Emission control rate GHGs
-    FORC::Array{JuMP.Variable,1} # Increase in radiative forcing (watts per m2 from 1900)
-    Tₐₜ::Array{JuMP.Variable,1} # Increase temperature of atmosphere (degrees C from 1900)
-    Tₗₒ::Array{JuMP.Variable,1} # Increase temperatureof lower oceans (degrees C from 1900)
-    Mₐₜ::Array{JuMP.Variable,1} # Carbon concentration increase in atmosphere (GtC from 1750)
-    Mᵤₚ::Array{JuMP.Variable,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
-    Mₗₒ::Array{JuMP.Variable,1} # Carbon concentration increase in lower oceans (GtC from 1750)
-    E::Array{JuMP.Variable,1} # Total CO2 emissions (GtCO2 per year)
-    C::Array{JuMP.Variable,1} # Consumption (trillions 2005 US dollars per year)
-    K::Array{JuMP.Variable,1} # Capital stock (trillions 2005 US dollars)
-    CPC::Array{JuMP.Variable,1} # Per capita consumption (thousands 2005 USD per year)
-    I::Array{JuMP.Variable,1} # Investment (trillions 2005 USD per year)
-    S::Array{JuMP.Variable,1} # Gross savings rate as fraction of gross world product
-    RI::Array{JuMP.Variable,1} # Real interest rate (per annum)
-    Y::Array{JuMP.Variable,1} # Gross world product net of abatement and damages (trillions 2005 USD per year)
-    YGROSS::Array{JuMP.Variable,1} # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
-    YNET::Array{JuMP.Variable,1} # Output net of damages equation (trillions 2005 USD per year)
-    DAMAGES::Array{JuMP.Variable,1} # Damages (trillions 2005 USD per year)
-    MCABATE::Array{JuMP.Variable,1} # Marginal cost of abatement (2005$ per ton CO2)
-    CCA::Array{JuMP.Variable,1} # Cumulative industrial carbon emissions (GTC)
-    PERIODU::Array{JuMP.Variable,1} # One period utility function
-    UTILITY::JuMP.Variable # Welfare function
+@base mutable struct Variables
+    μ::Array{VariableRef,1} # Emission control rate GHGs
+    FORC::Array{VariableRef,1} # Increase in radiative forcing (watts per m2 from 1900)
+    Tₐₜ::Array{VariableRef,1} # Increase temperature of atmosphere (degrees C from 1900)
+    Tₗₒ::Array{VariableRef,1} # Increase temperatureof lower oceans (degrees C from 1900)
+    Mₐₜ::Array{VariableRef,1} # Carbon concentration increase in atmosphere (GtC from 1750)
+    Mᵤₚ::Array{VariableRef,1} # Carbon concentration increase in shallow oceans (GtC from 1750)
+    Mₗₒ::Array{VariableRef,1} # Carbon concentration increase in lower oceans (GtC from 1750)
+    E::Array{VariableRef,1} # Total CO2 emissions (GtCO2 per year)
+    C::Array{VariableRef,1} # Consumption (trillions 2005 US dollars per year)
+    K::Array{VariableRef,1} # Capital stock (trillions 2005 US dollars)
+    CPC::Array{VariableRef,1} # Per capita consumption (thousands 2005 USD per year)
+    I::Array{VariableRef,1} # Investment (trillions 2005 USD per year)
+    S::Array{VariableRef,1} # Gross savings rate as fraction of gross world product
+    RI::Array{VariableRef,1} # Real interest rate (per annum)
+    Y::Array{VariableRef,1} # Gross world product net of abatement and damages (trillions 2005 USD per year)
+    YGROSS::Array{VariableRef,1} # Gross world product GROSS of abatement and damages (trillions 2005 USD per year)
+    YNET::Array{VariableRef,1} # Output net of damages equation (trillions 2005 USD per year)
+    DAMAGES::Array{VariableRef,1} # Damages (trillions 2005 USD per year)
+    MCABATE::Array{VariableRef,1} # Marginal cost of abatement (2005$ per ton CO2)
+    CCA::Array{VariableRef,1} # Cumulative industrial carbon emissions (GTC)
+    PERIODU::Array{VariableRef,1} # One period utility function
+    UTILITY::VariableRef # Welfare function
 end
 
 #TODO: Consider extending this to all equations rather than the ones useful for results
-@base type Equations
-    eeq::Array{JuMP.ConstraintRef,1} # Emissions Equation
+@base mutable struct Equations
+    eeq::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Emissions Equation
 end
 
 #NOTE: Monetary units herein are based on differing years depinding on version.
 # For example: v2013R uses 2005 as its base year and v2016R uses 2010.
 # Rule of thumb for these values is that the starting value `Results.years[1]`
 # is the baseline.
-@base type Results
+@base mutable struct Results
     years::Array{Int64,1} #Simulation units to true year values
     Mₐₜ::Array{Float64,1} # Carbon concentration increase in atmosphere (GtC from 1750)
     Mₐₜppm::Array{Float64,1} # Carbon concentration increase in atmosphere (ppm from 1750)

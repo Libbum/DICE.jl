@@ -41,23 +41,32 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 Suggestions and additions welcomed.
 
-## A note on Julia versions
-
-For anyone interested in this tool and has not used Julia before, you'll need a bit of additional information before you start.
-Julia 1.0 has only recently been released, and as such the community is in the process of porting code from the older version 0.64.
-This task, for the most part, is fairly trivial and has mostly been completed.
-One important package (JuMP) however has been implementing fundamental changes in its architecture, and the Julia 1.0 release has therefore came at quite an awkward time.
-JuMP's next release is now estimated to be about a month away (time of writing Dec 13 2018).
-For now, there are still teething problems with the current master branch, meaning DICE.jl [has not yet transitioned](https://github.com/Libbum/DICE.jl/pull/16) to the latest version, and therefore does not run on Julia 1.0 just yet.
-
-Please install [version 0.64](https://julialang.org/downloads/oldreleases.html) for the moment.
-This issue will be rectified as soon as possible.
-
 ## Usage
 
 Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP.jl) and a NLP solver.
+
 We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
 If you don't have these packages on your system, they will be installed when you add this package.
+
+The current recommendation however, is to use the latest version of the Ipopt solver (at time of writing: 3.12.13).
+If you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated.
+Then, add the following to your `~/.julia/config/startup.jl` file (create one if it doesn't exist)
+
+```julia
+ENV["JULIA_IPOPT_LIBRARY_PATH"] = "/usr/lib"
+ENV["JULIA_IPOPT_EXECUTABLE_PATH"] = "/usr/bin"
+```
+
+Other distributions may use a different path, so it would be useful to check `which ipopt` to verify the correct path here.
+
+If you've already built Ipopt.jl with the bundled version, simply build it again once your environment is set
+
+```shell
+julia> import Pkg; Pkg.build("Ipopt")
+```
+
+---
+
 Detailed instructions of setting up other solvers on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
 
 ### Notebooks
@@ -75,16 +84,23 @@ $ jupyter notebook
 and follow the generated link to your browser.
 If you don't need to interact with the notebook and are just curious about the output then github renders notebooks natively.
 You can just click on them and read through the output.
-All notebooks are stored in a previously executed state, whith all outputs rendered.
+All notebooks are stored in a previously executed state, with all outputs rendered.
 
 ### Module
 
 Using the module gives your greater control over the inputs of the system, and ultimately allows you to compare different versions of the model with the same input data (if possible and permitted).
 
-First, install the module via
+Create a new project and install the DICE module. For the moment it is not in METADATA, so add it via the repository directly:
 
-```julia
-Pkg.clone("git://github.com/Libbum/DICE.jl.git")
+```shell
+$ cd /path/to/projects/
+$ julia
+julia> ]
+(v1.1) pkg> generate MyProject
+julia> ;
+shell> cd MyProject
+(v1.1) pkg> activate .
+(MyProject) pkg> add https://github.com/Libbum/DICE.jl
 ```
 
 The simplest of files to run the default solution looks like this:
@@ -99,15 +115,16 @@ dice.results.UTILITY
 A more fleshed out example, enabling you to alter the configuration is also simple enough:
 
 ```julia
-using Ipopt;
 using DICE;
+import JuMP;
+using Ipopt;
 using Plots;
 unicodeplots()
 
 version = v2013R(); #Vanilla flavour
 conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
-ipopt = IpoptSolver(print_level=0)); #Don't print output when optimising solution
-dice = solve(BasePrice, version, config = conf, solver = ipopt);
+ipopt = JuMP.with_optimizer(Ipopt.Optimizer, print_level=0) #Don't print output when optimising solution
+dice = solve(BasePrice, version, config = conf, optimizer = ipopt);
 
 r = dice.results;
 plot(r.years,r.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
