@@ -1,4 +1,6 @@
+# TODO: Why is base in RR the same as Opti in Vanilla?
 function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
+    # Yields a number of NaNs during calculation. Would be good to massage this issue.
     JuMP.set_value(params.ψ₂, 0.0);
 
     optimize!(model);
@@ -15,14 +17,11 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOp
 end
 
 function assign_scenario(s::OptimalPriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    #Coerce ICs first.
-    optimize!(model);
     JuMP.set_upper_bound(vars.μ[1], config.μ₀);
 end
 
 function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    #Coerce ICs first.
-    optimize!(model);
+    #Currently concave
     for i in 1:config.N
         JuMP.set_upper_bound(vars.Tₐₜ[i], 2.0);
     end
@@ -38,6 +37,7 @@ function assign_scenario(s::SternScenario, model::Model, config::RockyRoadOption
 end
 
 function assign_scenario(s::SternCalibratedScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
+    #Currently Infeasible
     JuMP.set_value(params.α, 2.1);
     JuMP.set_value(params.ρ, 0.001);
     JuMP.set_value(params.optlrsav, (config.δk + .004)/(config.δk + .004*2.1 + 0.001)*config.γₑ);
@@ -49,8 +49,6 @@ function assign_scenario(s::SternCalibratedScenario, model::Model, config::Rocky
 
     JuMP.fix(vars.μ[1], 0.038976; force=true);
     JuMP.fix(vars.Tₐₜ[1], 0.83; force=true);
-
-    optimize!(model);
 end
 
 function assign_scenario(s::CopenhagenScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)

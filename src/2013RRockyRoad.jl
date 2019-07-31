@@ -279,7 +279,7 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     # Shallow ocean concentration
     @constraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
     # Temperature-climate equation for atmosphere
-    @constraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + params.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
+    @NLconstraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + params.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
     # Temperature-climate equation for lower oceans
     @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
@@ -288,8 +288,9 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    # We need to get the value to use the .== construct here.
-    @constraint(model, vars.S[N-10:N] .== value(params.optlrsav));
+    for i in N-10:N
+        @NLconstraint(model, vars.S[i] == params.optlrsav);
+    end
     # Initial conditions
     @constraint(model, vars.CCA[1] == 90.0);
     @NLconstraint(model, vars.K[1] == config.k₀);
@@ -326,7 +327,6 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     assign_scenario(scenario, model, config, params, variables);
 
-    optimize!(model);
     optimize!(model);
 
     results = model_results(model, config, params, variables, equations);

@@ -300,8 +300,6 @@ function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     equations = model_eqs(model, config, params, variables);
 
     optimize!(model);
-    optimize!(model);
-    optimize!(model);
 
     results = model_results(model, config, params, variables, equations);
 

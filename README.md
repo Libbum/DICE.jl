@@ -1,7 +1,7 @@
 <h1 align="center">DICE.jl</h1>
 
 <div align="center">
-    <a href="https://libbum.github.io/DICE.jl/latest">
+    <a href="https://libbum.github.io/DICE.jl/dev">
         <img src="https://img.shields.io/badge/docs-latest-blue.svg" alt="Documentation" />
     </a>
     │

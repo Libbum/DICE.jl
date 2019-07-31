@@ -281,7 +281,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Equation for damage fraction
     @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
-    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
+    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
     @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂);
     # Equation for MC abatement
@@ -291,15 +291,15 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Output gross equation
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
-    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
+    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
     # Output net equation
-    @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
     # Consumption equation
-    cc = @NLconstraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    cc = @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @NLconstraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Savings rate equation
-    @NLconstraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
+    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
     @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
