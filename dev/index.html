@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · DICE.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>DICE.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href>Home</a><ul class="internal"><li><a class="toctext" href="#Models-1">Models</a></li><li><a class="toctext" href="#Usage-1">Usage</a></li><li><a class="toctext" href="#License-1">License</a></li></ul></li><li><a class="toctext" href="api/">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Home</a></li></ul><a class="edit-page" href="https://github.com/Libbum/DICE.jl/blob/master/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Home</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="DICE.jl-Documentation-1" href="#DICE.jl-Documentation-1">DICE.jl Documentation</a></h1><p>The <a href="https://sites.google.com/site/williamdnordhaus/dice-rice">Dynamic Integrated model of Climate and the Economy</a> (DICE) model family are a popular and capable type of simple Integrated Assessment Model (IAM) of climate-change economics pioneered by William Nordhaus: the Sterling Professor of Economics at Yale University.</p><p>Economists, financiers and chemical engineers seem to love using the <a href="https://www.gams.com/">GAMS</a> IDE to solve their optimisation problems, and as such DICE runs either in GAMS or Excel, so long as one purchases an expensive NLP solver on top of the initial (arguably already too expensive) price of the parent software. Since there are a number of perfectly capable open source non-linear solvers in existence, this repository holds various DICE implementations that require no money down to operate.</p><h2><a class="nav-anchor" id="Models-1" href="#Models-1">Models</a></h2><p><strong>Implemented</strong></p><ul><li>v2013R (Vanilla Version)</li><li>v2016R Beta</li></ul><p><strong>In testing phase</strong></p><ul><li>v2013R (Rocky Road Version)</li><li>v2016R2 (see <a href="https://github.com/Libbum/DICE.jl/issues/4">this</a> issue)</li><li>DICE-CJL</li></ul><p><strong>Planned</strong></p><ul><li>van der Ploeg safe carbon budget</li></ul><h2><a class="nav-anchor" id="Usage-1" href="#Usage-1">Usage</a></h2><p>Prerequisites for using this package are <a href="https://github.com/JuliaOpt/JuMP.jl">JuMP</a> and a NLP solver.</p><p>We use <a href="https://projects.coin-or.org/Ipopt">Ipopt</a> here, but it&#39;s possible to use one of your choice. If you don&#39;t have these packages on your system, they will be installed when you add this package.</p><p>The current recommendation however, is to use the latest version of the Ipopt solver (at time of writing: 3.12.13). If you use a rolling-release OS like Arch Linux, the <a href="https://aur.archlinux.org/packages/coin-or-ipopt/">coin-or-ipopt</a> package will keep your system updated. Then, add the following to your <code>~/.julia/config/startup.jl</code> file (create one if it doesn&#39;t exist)</p><pre><code class="language-julia">ENV[&quot;JULIA_IPOPT_LIBRARY_PATH&quot;] = &quot;/usr/lib&quot;
+ENV[&quot;JULIA_IPOPT_EXECUTABLE_PATH&quot;] = &quot;/usr/bin&quot;</code></pre><p>Other distributions may use a different path, so it would be useful to check <code>which ipopt</code> to verify the correct path here.</p><p>If you&#39;ve already built Ipopt.jl with the bundled version, simply build it again once your environment is set</p><pre><code class="language-shell">julia&gt; import Pkg; Pkg.build(&quot;Ipopt&quot;)</code></pre><hr/><p>Detailed instructions of setting up other solvers on your machine can be viewed in the <a href="http://www.juliaopt.org/JuMP.jl/0.18/installation.html">JuMP Documentation</a>.</p><h3><a class="nav-anchor" id="Notebooks-1" href="#Notebooks-1">Notebooks</a></h3><p>Self contained notebooks can be found in a separate <a href="https://github.com/Libbum/DICE.jl-notebooks">DICE.jl-notebooks</a> repository that run default instances of each model, plot the major results and compare the output with original source data (where available).</p><p>The best way to use these is to run a notebook server from a cloned copy of this repository:</p><pre><code class="language-shell">$ git clone git@github.com:Libbum/DICE.jl-notebooks.git
+$ cd DICE.jl-notebooks
+$ jupyter notebook</code></pre><p>and follow the generated link to your browser. If you don&#39;t need to interact with the notebook and are just curious about the output then github renders notebooks natively. You can just click on them and read through the output. All notebooks are stored in a previously executed state, with all outputs rendered.</p><h3><a class="nav-anchor" id="Module-1" href="#Module-1">Module</a></h3><p>Using the module gives your greater control over the inputs of the system, and ultimately allows you to compare different versions of the model with the same input data (if possible and permitted).</p><p>Create a new project and install the DICE module. For the moment it is not in METADATA, so add it via the repository directly:</p><pre><code class="language-shell">$ cd /path/to/projects/
+$ julia
+julia&gt; ]
+(v1.1) pkg&gt; generate MyProject
+julia&gt; ;
+shell&gt; cd MyProject
+(v1.1) pkg&gt; activate .
+(MyProject) pkg&gt; add https://github.com/Libbum/DICE.jl</code></pre><p>The simplest of files to run the default solution looks like this:</p><pre><code class="language-julia">using DICE;
+
+dice = solve(OptimalPrice, v2013R());
+dice.results.UTILITY</code></pre><p>A more fleshed out example, enabling you to alter the configuration is also simple enough:</p><pre><code class="language-julia">using DICE;
+import JuMP;
+using Ipopt;
+using Plots;
+unicodeplots()
+
+version = v2013R(); #Vanilla flavour
+conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
+ipopt = JuMP.with_optimizer(Ipopt.Optimizer, print_level=0) #Don&#39;t print output when optimising solution
+dice = solve(BasePrice, version, config = conf, optimizer = ipopt);
+
+r = dice.results;
+plot(r.years,r.scc,ylabel=&quot;\$ (trillion)&quot;,xlabel=&quot;Years&quot;,title=&quot;SCC&quot;,legend=false)</code></pre><p>yielding the estimated global cost of carbon emissions out to 2300 without an optimal carbon price</p><pre><code class="language-none">
+                                                       SCC
+                    ┌─────────────────────────────────────────────────────────────────────────┐
+                400 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠖⠉⠉⠉⠦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠀⠀⢱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡴⠁⠀⠀⠀⠀⠀⠀⠀⠀⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+   $ (trillion)     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠜⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠜⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⠀⠀⠀⠀⣠⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    │⠀⠀⢀⣠⠔⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                  0 │⠀⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │
+                    └─────────────────────────────────────────────────────────────────────────┘
+                    2000                                                                   2400
+                                                      Years</code></pre><h2><a class="nav-anchor" id="License-1" href="#License-1">License</a></h2><p>The code herein is distributed under the MIT license, so feel free to distribute it as you will under its terms. The solver listed in the source is <a href="https://projects.coin-or.org/Ipopt">Ipopt</a>: the codebase of which is under EPL. As we do not include the solver in this repository, there is no need to distribute this license here. EPL is compatible with MIT for this use case (GPL for instance is not). One is welcomed to use an alternate solver to suit their needs as the <a href="https://github.com/JuliaOpt/JuMP.jl">JuMP</a> framework integrates with <a href="http://www.juliaopt.org/JuMP.jl/0.18/installation.html#getting-solvers">several</a>. Please remain aware of the licensing restrictions for each, as many license choices in this domain are incompatible.</p><footer><hr/><a class="next" href="api/"><span class="direction">Next</span><span class="title">API</span></a></footer></article></body></html>
