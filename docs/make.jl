@@ -1,5 +1,7 @@
 using Documenter, DICE
 
+DocMeta.setdocmeta!(DICE, :DocTestSetup, :(using DICE); recursive=true)
+
 makedocs(
     modules = [DICE],
     doctest = true,
@@ -16,6 +18,4 @@ makedocs(
 deploydocs(
     repo   = "github.com/Libbum/DICE.jl.git",
     target = "build",
-    make   = nothing,
-    deps   = nothing,
 )
