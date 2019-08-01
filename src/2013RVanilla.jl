@@ -168,10 +168,10 @@ function generate_parameters(c::VanillaOptions)
 
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
-        fₑₓ[i] = if i < 19
+        fₑₓ[i] = if i <= 19
                          c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                      else
-                         c.fₑₓ1-c.fₑₓ0
+                         c.fₑₓ0+(c.fₑₓ1-c.fₑₓ0)
                      end;
         partfract[i] = if i <= c.periodfullpart
                             c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
