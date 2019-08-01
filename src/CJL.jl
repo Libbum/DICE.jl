@@ -180,7 +180,7 @@ function generate_parameters(c::OptionsVCJL)
         fₑₓ[i] = if i < 101
                         c.fₑₓ0+0.01*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                     else
-                        0.36
+                        0.36 #TODO: Check forcoth implementation in GAMS source. Libbum/DICE.jl/issues/23
                     end;
         partfract[i] = if i <= 259
                             c.partfract21+(c.partfract2-c.partfract21)*exp.(-c.dpartfract*(i-2))

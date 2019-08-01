@@ -189,10 +189,10 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
 
     for i in 1:c.N
         θ₁[i] = pbacktime[i]*σ[i]/c.θ₂/1000.0;
-        fₑₓ[i] = if i < 18
+        fₑₓ[i] = if i <= 18
                         c.fₑₓ0+(1/17)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                     else
-                        c.fₑₓ1-c.fₑₓ0
+                        c.fₑₓ0+(c.fₑₓ1-c.fₑₓ0)
                     end;
     end
     ParametersV2016(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,rr,optlrsav,ψ₂,cumtree)

@@ -154,10 +154,10 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
         gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
-        fₑₓ[i] = if i < 19
+        fₑₓ[i] = if i <= 19
                          c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                      else
-                         c.fₑₓ1-c.fₑₓ0
+                         c.fₑₓ0+(c.fₑₓ1-c.fₑₓ0)
                      end;
     end
 
