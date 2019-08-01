@@ -160,9 +160,13 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
     @testset "2013R (RockyRoad)" begin
         #NOTE: None of these values have been verified yet.
         # See issue #3. Have set some to broken to remember this.
-        @info "Base Price Scenario with v2013R(RockyRoad)"
-        result = DICE.solve(BasePrice, v2013R(RockyRoad), optimizer = optimizer);
-        @test result.results.UTILITY ≈ 2668.210583897074
+
+        # Will fail on 3.12.10, so don't run if using Travis
+        if get(ENV, "TRAVIS", "false") == "false"
+            @info "Base Price Scenario with v2013R(RockyRoad)"
+            result = DICE.solve(BasePrice, v2013R(RockyRoad), optimizer = optimizer);
+            @test result.results.UTILITY ≈ 2668.210583897074
+        end
         @info "Optimal Price Scenario with v2013R(RockyRoad)"
         result = DICE.solve(OptimalPrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2741.230618094657
@@ -180,12 +184,9 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2725.414606616763
     end
     @testset "2016R beta" begin
-        # Will fail on 3.12.10, so don't run if using Travis
-        #if get(ENV, "TRAVIS", "false") == "false"
-            @info "Base Price Scenario with v2016R"
-            result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
-            @test result.results.UTILITY ≈ 4485.743403340536
-        #end
+        @info "Base Price Scenario with v2016R"
+        result = DICE.solve(BasePrice, v2016R(), optimizer = optimizer);
+        @test result.results.UTILITY ≈ 4485.743403340536
         @info "Optimal Price Scenario with v2016R"
         result = DICE.solve(OptimalPrice, v2016R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4517.314632069992
