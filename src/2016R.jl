@@ -326,7 +326,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    @constraint(model, vars.S[N-10:N] .== params.optlrsav);
+    @constraint(model, vars.S[N-9:N] .== params.optlrsav);
     # Initial conditions
     @constraint(model, vars.CCA[1] == 400.0);
     @NLconstraint(model, vars.K[1] == config.k₀);
