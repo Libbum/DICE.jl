@@ -237,7 +237,7 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @NLconstraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
+    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
     # Industrial Emissions
     @NLconstraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
     # Radiative forcing equation
@@ -257,7 +257,7 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     # Output net of damages equation
     @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
     # Output net equation
-    yy = @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    yy = @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
     # Consumption equation
     @NLconstraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
