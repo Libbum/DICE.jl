@@ -106,8 +106,7 @@ v2016_eqs = DICE.model_eqs(model2016, v2016_opt, v2016_params, v2016_vars);
     @testset "Scenarios" begin
         @testset "2013R (Vanilla)" begin
             @test DICE.assign_scenario(BasePrice, vanilla_opt, vanilla_params) == vanilla_params.cpricebase
-            vanilla_optimal_price = DICE.assign_scenario(OptimalPrice, vanilla_opt, vanilla_params);
-            @test all(x->(vanilla_optimal_price[x] ≈ 1000.0), Int(vanilla_opt.tnopol+1):vanilla_opt.N)
+            @test DICE.assign_scenario(OptimalPrice, vanilla_opt, vanilla_params) ==fill(Inf, vanilla_opt.N)
         end
         @testset "2013R (Rocky Road)" begin
             DICE.assign_scenario(BasePrice, modelrr, rr_opt, rr_params, rr_vars);
@@ -147,12 +146,7 @@ end
 base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
-        # Will fail on 3.12.10, so don't run if using Travis
-        if get(ENV, "TRAVIS", "false") == "true"
-            @test_broken result.results.UTILITY ≈ 2668.121562922222
-        else
-            @test base.results.UTILITY ≈ 2668.121562922222
-        end
+        @test base.results.UTILITY ≈ 2668.2119030244385
         @info "Optimal Price Scenario with v2013R(Vanilla)"
         result = DICE.solve(OptimalPrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2689.176142455704
