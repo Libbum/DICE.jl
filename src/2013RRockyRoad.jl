@@ -288,7 +288,7 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    for i in N-10:N
+    for i in N-9:N
         @NLconstraint(model, vars.S[i] == params.optlrsav);
     end
     # Initial conditions
