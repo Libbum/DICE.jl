@@ -146,12 +146,7 @@ end
 base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
 @testset "Utility" begin
     @testset "2013R (Vanilla)" begin
-        # Will fail on 3.12.10, so don't run if using Travis
-        #if get(ENV, "TRAVIS", "false") == "true"
-            #@test_broken result.results.UTILITY ≈ 2668.121562922222
-        #else
-            @test base.results.UTILITY ≈ 2668.2119030244385
-        #end
+        @test base.results.UTILITY ≈ 2668.2119030244385
         @info "Optimal Price Scenario with v2013R(Vanilla)"
         result = DICE.solve(OptimalPrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2689.176142455704
