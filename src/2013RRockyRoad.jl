@@ -130,7 +130,7 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
 
-    @NLparameter(model, ψ₂ == c.ψ₂);
+    @NLparameter(model, ψ₂ == c.ψ₂₀);
     @NLparameter(model, α == c.α);
     @NLparameter(model, ρ == c.ρ);
     # Optimal savings rate

@@ -1,8 +1,5 @@
-# TODO: Why is base in RR the same as Opti in Vanilla?
 function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    # Yields a number of NaNs during calculation. Would be good to massage this issue.
     JuMP.set_value(params.ψ₂, 0.0);
-
     optimize!(model);
 
     photel = value.(vars.CPRICE);
@@ -12,7 +9,6 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOp
             JuMP.set_upper_bound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
         end
     end
-
     JuMP.set_value(params.ψ₂, config.ψ₂₀);
 end
 
