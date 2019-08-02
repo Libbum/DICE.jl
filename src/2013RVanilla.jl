@@ -294,6 +294,14 @@ function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
 
     cprice_ubound = assign_scenario(scenario, config, params);
+    cprice_ubound[1] = params.cpricebase[1];
+    # Warning: If parameters are changed, the next equation might make base case infeasible.
+    # If so, reduce tnopol so that we don't run out of resources.
+    for i in 2:config.N
+        if i > config.tnopol
+            cprice_ubound[i] = 1000.0;
+        end
+    end
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
