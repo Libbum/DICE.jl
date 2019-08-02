@@ -130,7 +130,7 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
 
-    @NLparameter(model, ψ₂ == c.ψ₂₀);
+    @NLparameter(model, ψ₂ == c.ψ₂);
     @NLparameter(model, α == c.α);
     @NLparameter(model, ρ == c.ρ);
     # Optimal savings rate
@@ -237,15 +237,15 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     N = config.N;
     # Equations #
     # Emissions Equation
-    eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
+    eeq = @NLconstraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
     # Industrial Emissions
-    @constraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
+    @NLconstraint(model, [i=1:N], vars.Eind[i] == params.σ[i] * vars.YGROSS[i] * (1-vars.μ[i]));
     # Radiative forcing equation
     @NLconstraint(model, [i=1:N], vars.FORC[i] == config.η * (log(vars.Mₐₜ[i]/588.0)/log(2)) + params.fₑₓ[i]);
     # Equation for damage fraction
     @NLconstraint(model, [i=1:N], vars.Ω[i] == config.ψ₁*vars.Tₐₜ[i]+params.ψ₂*vars.Tₐₜ[i]^config.ψ₃);
     # Damage equation
-    @constraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
+    @NLconstraint(model, [i=1:N], vars.DAMAGES[i] == vars.YGROSS[i]*vars.Ω[i]);
     # Cost of exissions reductions equation
     @NLconstraint(model, [i=1:N], vars.Λ[i] == vars.YGROSS[i] * params.θ₁[i] * vars.μ[i]^config.θ₂ * params.partfract[i]^(1-config.θ₂));
     # Equation for MC abatement
@@ -255,15 +255,15 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     # Output gross equation
     @NLconstraint(model, [i=1:N], vars.YGROSS[i] == params.A[i]*(params.L[i]/1000.0)^(1-config.γₑ)*vars.K[i]^config.γₑ);
     # Output net of damages equation
-    @constraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
+    @NLconstraint(model, [i=1:N], vars.YNET[i] == vars.YGROSS[i]*(1-vars.Ω[i]));
     # Output net equation
-    yy = @constraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
+    yy = @NLconstraint(model, [i=1:N], vars.Y[i] == vars.YNET[i] - vars.Λ[i]);
     # Consumption equation
-    @constraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
+    @NLconstraint(model, [i=1:N], vars.C[i] == vars.Y[i] - vars.I[i]);
     # Per capita consumption definition
-    @constraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
+    @NLconstraint(model, [i=1:N], vars.CPC[i] == 1000.0 * vars.C[i] / params.L[i]);
     # Savings rate equation
-    @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
+    @NLconstraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
     @NLconstraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
@@ -271,17 +271,17 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
 
     # Equations (offset) #
     # Cumulative carbon emissions
-    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*5/3.666);
+    @NLconstraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*5/3.666);
     # Atmospheric concentration equation
-    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
+    @NLconstraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
     # Lower ocean concentration
-    @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
+    @NLconstraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
     # Shallow ocean concentration
-    @constraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
+    @NLconstraint(model, [i=1:N-1], vars.Mᵤₚ[i+1] == vars.Mₐₜ[i]*config.ϕ₁₂ + vars.Mᵤₚ[i]*params.ϕ₂₂ + vars.Mₗₒ[i]*params.ϕ₃₂);
     # Temperature-climate equation for atmosphere
-    @constraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + params.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
+    @NLconstraint(model, [i=1:N-1], vars.Tₐₜ[i+1] == vars.Tₐₜ[i] + params.ξ₁*((vars.FORC[i+1]-params.λ*vars.Tₐₜ[i])-(config.ξ₃*(vars.Tₐₜ[i]-vars.Tₗₒ[i]))));
     # Temperature-climate equation for lower oceans
-    @constraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
+    @NLconstraint(model, [i=1:N-1], vars.Tₗₒ[i+1] == vars.Tₗₒ[i] + config.ξ₄*(vars.Tₐₜ[i]-vars.Tₗₒ[i]));
     # Capital balance equation
     @NLconstraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
@@ -292,18 +292,18 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
         @NLconstraint(model, vars.S[i] == params.optlrsav);
     end
     # Initial conditions
-    @constraint(model, vars.CCA[1] == 90.0);
+    @NLconstraint(model, vars.CCA[1] == 90.0);
     @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    @NLconstraint(model, vars.Mₐₜ[1] == config.mat₀);
+    @NLconstraint(model, vars.Mᵤₚ[1] == config.mu₀);
+    @NLconstraint(model, vars.Mₗₒ[1] == config.ml₀);
+    @NLconstraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    @NLconstraint(model, vars.Tₗₒ[1] == config.tocean₀);
 
-    @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
+    @NLconstraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
     # Objective function
-    @objective(model, Max, vars.UTILITY);
+    @NLobjective(model, Max, vars.UTILITY);
 
     RockyRoadEquations(eeq,yy)
 end
