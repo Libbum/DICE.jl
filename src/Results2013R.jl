@@ -52,9 +52,9 @@ function model_results(model::Model, config::Options, params::Parameters, vars::
     RI = value.(vars.RI);
     CEMUTOTPER = value.(vars.CEMUTOTPER);
     scc = if typeof(eqs) <: VanillaEquations
-        -1000 .* shadow_price.(eqs.eeq)./shadow_price.(eqs.cc)
+        1000 .* shadow_price.(eqs.eeq)./shadow_price.(eqs.cc)
     else
-        -1000 .* shadow_price.(eqs.eeq)./shadow_price.(eqs.yy)
+        1000 .* shadow_price.(eqs.eeq)./shadow_price.(eqs.yy)
     end;
     ResultsV2013(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,Eind,Σ,Ω,Λ,co2price,cprice,μ_participants,MCABATE,co2price_avg,CEMUTOTPER)

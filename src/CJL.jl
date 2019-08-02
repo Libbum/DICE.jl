@@ -362,7 +362,7 @@ function model_results(model::Model, config::OptionsVCJL, params::ParametersVCJL
     S = value.(vars.S);
     μ = value.(vars.μ);
     RI = value.(vars.RI);
-    scc = -1000 .* shadow_price.(eqs.eeq)./(shadow_price.(eqs.kk) .+ 0.00000000001);
+    scc = 1000 .* shadow_price.(eqs.eeq)./(shadow_price.(eqs.kk) .+ 0.00000000001);
     mcemis = config.θ₂.*params.θ₁.*μ.^(config.θ₂-1)./params.σ.*1000.;
     ResultsVCJL(years,Mₐₜ,Mₐₜppm,Mᵤₚ,Mₗₒ,CCA,CCAratio,Tₐₜ,FORC,Tₗₒ,YGROSS,DAMAGES,YNET,
                Y,E,I,K,MPK,C,CPC,PERIODU,UTILITY,S,μ,RI,scc,MCABATE,MₐₜAV,PCY,mcemis)
