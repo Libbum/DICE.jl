@@ -14,6 +14,9 @@ end
 
 function assign_scenario(s::OptimalPriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
     JuMP.set_upper_bound(vars.μ[1], config.μ₀);
+    for i in 2:config.N
+        JuMP.delete_upper_bound(vars.μ[i]);
+    end
 end
 
 function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
