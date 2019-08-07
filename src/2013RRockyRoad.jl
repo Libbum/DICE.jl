@@ -114,8 +114,8 @@ end
     ξ₁::Float64
     ψ₂::JuMP.NonlinearParameter
     optlrsav::Float64 # Optimal savings rate
-    rr::Array{Float64,1} # Fraction of emissions in control regime
-    partfract::Array{Float64,1} # Average utility social discount rate
+    rr::Array{Float64,1} # Average utility social discount rate
+    partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
 function generate_parameters(c::RockyRoadOptions, model::Model)
@@ -286,15 +286,25 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    @constraint(model, vars.S[N-9:N] .== params.optlrsav);
+    for i=N-9:N
+        JuMP.fix(vars.S[i], params.optlrsav; force=true);
+    end
+    #@constraint(model, vars.S[N-9:N] .== params.optlrsav);
     # Initial conditions
-    @constraint(model, vars.CCA[1] == 90.0);
-    @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    JuMP.fix(vars.CCA[1], 90.0; force=true);
+    JuMP.fix(vars.K[1], config.k₀; force=true);
+    JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
+    JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
+    JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
+    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+    JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
+    #@constraint(model, vars.CCA[1] == 90.0);
+    #@NLconstraint(model, vars.K[1] == config.k₀);
+    #@constraint(model, vars.Mₐₜ[1] == config.mat₀);
+    #@constraint(model, vars.Mᵤₚ[1] == config.mu₀);
+    #@constraint(model, vars.Mₗₒ[1] == config.ml₀);
+    #@constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    #@constraint(model, vars.Tₗₒ[1] == config.tocean₀);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
@@ -312,6 +322,13 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     model = Model(optimizer);
 
     params = generate_parameters(config, model);
+     # Stern
+    config.α = 1.01;
+    config.ρ = 0.001;
+    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
+    for i = 1:config.N
+        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
+    end
 
     # Rate limit
     μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
@@ -321,7 +338,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     equations = model_eqs(model, config, params, variables);
 
-    assign_scenario(scenario, model, config, params, variables);
+    #assign_scenario(scenario, model, config, params, variables);
 
     optimize!(model);
 

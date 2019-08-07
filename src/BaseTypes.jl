@@ -2,7 +2,7 @@
     N::Int #Number of years to calculate (from 2010 onwards)
     tstep::Int #Years per Period
     α::Float64 #Elasticity of marginal utility of consumption
-    ρ::Float64 #Initial rate of social time preference per year ρ
+    ρ::Float64 #Initial rate of social time preference per year
     γₑ::Float64 #Capital elasticity in production function (Capital share)
     pop₀::Int #Initial world population (millions)
     popadj::Float64 #Growth rate to calibrate to 2050 pop projection
