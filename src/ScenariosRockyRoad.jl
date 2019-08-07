@@ -26,23 +26,8 @@ function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRo
     end
 end
 
-function assign_scenario(s::SternScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    config.α = 1.01;
-    config.ρ = 0.001;
-    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
-    for i = 1:config.N
-        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
-    end
-end
-
 function assign_scenario(s::SternCalibratedScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    #Currently Infeasible
-    JuMP.set_value(params.α, 2.1);
-    JuMP.set_value(params.ρ, 0.001);
-    JuMP.set_value(params.optlrsav, (config.δk + .004)/(config.δk + .004*2.1 + 0.001)*config.γₑ);
-
     for i in 1:config.N
-        JuMP.set_value(params.rr[i], 1 ./ ((1+0.001).^(config.tstep*(i-1))));
         JuMP.set_lower_bound(vars.μ[i], 0.01);
     end
 
@@ -64,4 +49,29 @@ function assign_scenario(s::CopenhagenScenario, model::Model, config::RockyRoadO
     for i in 1:config.N
         JuMP.fix(vars.μ[i], imported_μ[i]; force=true);
     end
+end
+
+
+function assign_scenario(s::Scenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
+end
+
+function scenario_alterations(s::SternScenario, config::RockyRoadOptions, params::RockyRoadParameters)
+    config.α = 1.01;
+    config.ρ = 0.001;
+    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
+    for i = 1:config.N
+        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
+    end
+end
+
+function scenario_alterations(s::SternCalibratedScenario, config::RockyRoadOptions, params::RockyRoadParameters)
+    config.α = 2.1;
+    config.ρ = 0.001;
+    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
+    for i = 1:config.N
+        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
+    end
+end
+
+function scenario_alterations(s::Scenario, config::RockyRoadOptions, params::RockyRoadParameters)
 end

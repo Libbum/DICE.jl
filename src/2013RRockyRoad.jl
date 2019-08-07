@@ -322,13 +322,8 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     model = Model(optimizer);
 
     params = generate_parameters(config, model);
-     # Stern
-    config.α = 1.01;
-    config.ρ = 0.001;
-    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
-    for i = 1:config.N
-        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
-    end
+
+    scenario_alterations(scenario, config, params);
 
     # Rate limit
     μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
