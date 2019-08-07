@@ -1,4 +1,4 @@
-@extend struct RockyRoadOptions <: Options
+@extend mutable struct RockyRoadOptions <: Options
     e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
     μ₀::Float64 #Initial emissions control rate for base case 2010
     tnopol::Float64 #Period before which no emissions controls base
@@ -108,7 +108,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-@extend struct RockyRoadParameters <: Parameters
+@extend mutable struct RockyRoadParameters <: Parameters
     pbacktime::Array{Float64,1} # Backstop price
     cpricebase::Array{Float64,1} # Carbon price in base case
     ξ₁::Float64

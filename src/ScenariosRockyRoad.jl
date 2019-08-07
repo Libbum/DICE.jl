@@ -27,11 +27,11 @@ function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRo
 end
 
 function assign_scenario(s::SternScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    JuMP.set_value(params.α, 1.01);
-    JuMP.set_value(params.ρ, 0.001);
-    JuMP.set_value(params.optlrsav, (config.δk + .004)/(config.δk + .004*1.01 + 0.001)*config.γₑ);
+    config.α = 1.01;
+    config.ρ = 0.001;
+    params.optlrsav = (config.δk + .004)/(config.δk + .004*config.α + config.ρ)*config.γₑ;
     for i = 1:config.N
-        JuMP.set_value(params.rr[i], 1 ./ ((1+0.001).^(config.tstep*(i-1))));
+        params.rr[i] = 1 ./ ((1+config.ρ).^(config.tstep*(i-1)));
     end
 end
 
