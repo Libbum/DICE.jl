@@ -49,8 +49,7 @@ function assign_scenario(s::OptimalPriceScenario, model::Model, config::RockyRoa
 end
 
 function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    #Currently concave
-    for i in 1:config.N
+    for i in 2:config.N
         JuMP.set_upper_bound(vars.Tₐₜ[i], 2.0);
     end
 end
