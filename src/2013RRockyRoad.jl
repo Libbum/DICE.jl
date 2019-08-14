@@ -289,7 +289,6 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     for i=N-9:N
         JuMP.fix(vars.S[i], params.optlrsav; force=true);
     end
-    #@constraint(model, vars.S[N-9:N] .== params.optlrsav);
     # Initial conditions
     JuMP.fix(vars.CCA[1], 90.0; force=true);
     JuMP.fix(vars.K[1], config.k₀; force=true);
@@ -298,13 +297,6 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
-    #@constraint(model, vars.CCA[1] == 90.0);
-    #@NLconstraint(model, vars.K[1] == config.k₀);
-    #@constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    #@constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    #@constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    #@constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    #@constraint(model, vars.Tₗₒ[1] == config.tocean₀);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
