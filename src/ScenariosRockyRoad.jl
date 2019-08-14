@@ -72,8 +72,6 @@ function assign_scenario(s::CopenhagenScenario, model::Model, config::RockyRoadO
     for i in 1:config.N
         JuMP.fix(vars.μ[i], imported_μ[i]; force=true);
     end
-    JuMP.set_lower_bound(vars.μ[1], 0.0);
-    JuMP.set_upper_bound(vars.μ[1], 1.5);
 end
 
 function assign_scenario(s::Scenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
