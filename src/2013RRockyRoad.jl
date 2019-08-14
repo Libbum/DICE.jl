@@ -325,7 +325,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     equations = model_eqs(model, config, params, variables);
 
-    #assign_scenario(scenario, model, config, params, variables);
+    assign_scenario(scenario, model, config, params, variables);
 
     optimize!(model);
 
