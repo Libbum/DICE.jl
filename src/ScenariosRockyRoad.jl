@@ -18,10 +18,10 @@ end
 
 function scenario_alterations(s::CopenhagenScenario, config::RockyRoadOptions, params::RockyRoadParameters)
     #The Copenhagen participation fraction.
-#    imported_partfrac = ones(config.N);
-#    imported_partfrac[1:18] = [0.2,0.390423082,0.379051794,0.434731269,0.42272216,0.410416777,0.707776548,0.692148237,0.840306905,0.834064356,0.939658852,0.936731085,0.933881267,0.930944201,0.928088049,0.925153812,0.922301007,0.919378497];
+    imported_partfrac = ones(config.N);
+    imported_partfrac[1:18] = [0.2,0.390423082,0.379051794,0.434731269,0.42272216,0.410416777,0.707776548,0.692148237,0.840306905,0.834064356,0.939658852,0.936731085,0.933881267,0.930944201,0.928088049,0.925153812,0.922301007,0.919378497];
 
-#    params.partfract .= imported_partfrac;
+    params.partfract .= imported_partfrac;
 end
 
 function scenario_alterations(s::Scenario, config::RockyRoadOptions, params::RockyRoadParameters)
