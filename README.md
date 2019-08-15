@@ -28,11 +28,11 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 **Implemented**
 - v2013R (Vanilla Version)
+- v2013R (Rocky Road Version)
 - v2016R Beta
 
 **In testing phase**
-- v2013R (Rocky Road Version)
-- v2016R2 (see [this](https://github.com/Libbum/DICE.jl/issues/4) issue)
+- v2016R2
 - DICE-CJL
 
 **Planned**
