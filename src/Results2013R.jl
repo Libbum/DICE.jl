@@ -44,11 +44,7 @@ function model_results(model::Model, config::Options, params::Parameters, vars::
     cprice = value.(vars.CPRICE)*3.666;
     μ = value.(vars.μ);
     μ_participants = (co2price./params.pbacktime).^(1/(config.θ₂-1));
-    co2price_avg = if typeof(params) <: VanillaParameters
-        co2price.*params.partfract
-    else
-        co2price.*value.(params.partfract)
-    end;
+    co2price_avg = co2price.*params.partfract
     RI = value.(vars.RI);
     CEMUTOTPER = value.(vars.CEMUTOTPER);
     scc = if typeof(eqs) <: VanillaEquations

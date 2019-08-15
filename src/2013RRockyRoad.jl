@@ -1,4 +1,4 @@
-@extend struct RockyRoadOptions <: Options
+@extend mutable struct RockyRoadOptions <: Options
     e₀::Float64 #Industrial emissions 2010 (GtCO2 per year)
     μ₀::Float64 #Initial emissions control rate for base case 2010
     tnopol::Float64 #Period before which no emissions controls base
@@ -108,16 +108,14 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadOptions)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-@extend struct RockyRoadParameters <: Parameters
+@extend mutable struct RockyRoadParameters <: Parameters
     pbacktime::Array{Float64,1} # Backstop price
     cpricebase::Array{Float64,1} # Carbon price in base case
     ξ₁::Float64
     ψ₂::JuMP.NonlinearParameter
-    α::JuMP.NonlinearParameter
-    ρ::JuMP.NonlinearParameter
-    optlrsav::JuMP.NonlinearParameter # Optimal savings rate
-    rr::Array{JuMP.NonlinearParameter,1} # Fraction of emissions in control regime
-    partfract::Array{JuMP.NonlinearParameter,1} # Average utility social discount rate
+    optlrsav::Float64 # Optimal savings rate
+    rr::Array{Float64,1} # Average utility social discount rate
+    partfract::Array{Float64,1} # Fraction of emissions in control regime
 end
 
 function generate_parameters(c::RockyRoadOptions, model::Model)
@@ -131,12 +129,9 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     ξ₁::Float64 = c.ξ₁₀ + c.ξ₁β*(c.t2xco2-2.9); # Transient TSC Correction ("Speed of Adjustment Parameter")
 
     @NLparameter(model, ψ₂ == c.ψ₂);
-    @NLparameter(model, α == c.α);
-    @NLparameter(model, ρ == c.ρ);
+
     # Optimal savings rate
-    @NLparameter(model, optlrsav == (c.δk + .004)/(c.δk + .004*c.α + c.ρ)*c.γₑ);
-    # Average utility social discount rate
-    @NLparameter(model, rr[i=1:c.N] == 1/((1+c.ρ)^(c.tstep*(i-1))));
+    optlrsav::Float64 = (c.δk + .004)/(c.δk + .004*c.α + c.ρ)*c.γₑ;
 
     # Backstop price
     pbacktime = Array{Float64}(undef, c.N);
@@ -146,6 +141,8 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     Etree = Array{Float64}(undef, c.N);
     # Carbon price in base case
     cpricebase = Array{Float64}(undef, c.N);
+    # Average utility social discount rate
+    rr = Array{Float64}(undef, c.N);
     # Exogenous forcing for other greenhouse gases
     fₑₓ = Array{Float64}(undef, c.N);
 
@@ -154,6 +151,7 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
         gₐ[i] = c.ga₀*exp.(-c.δₐ*5*(i-1));
         Etree[i] = c.eland₀*(1-c.deland)^(i-1);
         cpricebase[i] = c.cprice₀*(1+c.gcprice)^(5*(i-1));
+        rr[i] = 1/((1+c.ρ)^(c.tstep*(i-1)));
         fₑₓ[i] = if i <= 19
                          c.fₑₓ0+(1/18)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                      else
@@ -190,24 +188,23 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     end
 
     # Fraction of emissions in control regime
-    pfract = Array{Float64}(undef, c.N);
+    partfract = Array{Float64}(undef, c.N);
     for i in 1:c.N
-        pfract[i] = if i <= c.periodfullpart
+        partfract[i] = if i <= c.periodfullpart
                             c.partfract2010+(c.partfractfull-c.partfract2010)*(i-1)/c.periodfullpart
                        else
                             c.partfractfull
                        end;
     end
-    pfract[1] = c.partfract2010;
-    @NLparameter(model, partfract[i=1:c.N] == pfract[i]);
+    partfract[1] = c.partfract2010;
 
-    RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,ξ₁,ψ₂,α,ρ,optlrsav,rr,partfract)
+    RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,ξ₁,ψ₂,optlrsav,rr,partfract)
 end
 
 #TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
-    println(io, "Optimal savings rate: $(value(opt.optlrsav))");
+    println(io, "Optimal savings rate: $(opt.optlrsav)");
     println(io, "Carbon cycle transition matrix coefficients");
     println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
     println(io, "2010 Carbon intensity: $(opt.σ₀)");
@@ -216,7 +213,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Backstop price: $(opt.pbacktime)");
     println(io, "Growth rate of productivity: $(opt.gₐ)");
     println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(value.(opt.rr))");
+    println(io, "Avg utility social discout rate: $(opt.rr)");
     println(io, "Base case carbon price: $(opt.cpricebase)");
     println(io, "Population and labour: $(opt.L)");
     println(io, "Total factor productivity: $(opt.A)");
@@ -224,7 +221,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "σ: $(opt.σ)");
     println(io, "θ₁: $(opt.θ₁)");
     println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(value.(opt.partfract))");
+    print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
 end
 
 @extend struct RockyRoadEquations <: Equations
@@ -235,6 +232,7 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
+    scale = 5/3.666;
     # Equations #
     # Emissions Equation
     eeq = @constraint(model, [i=1:N], vars.E[i] == vars.Eind[i] + params.Etree[i]);
@@ -265,15 +263,15 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     # Savings rate equation
     @constraint(model, [i=1:N], vars.I[i] == vars.S[i] * vars.Y[i]);
     # Period utility
-    @NLconstraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
+    @constraint(model, [i=1:N], vars.CEMUTOTPER[i] == vars.PERIODU[i] * params.L[i] * params.rr[i]);
     # Instantaneous utility function equation
-    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-params.α)-1)/(1-params.α)-1);
+    @NLconstraint(model, [i=1:N], vars.PERIODU[i] == ((vars.C[i]*1000.0/params.L[i])^(1-config.α)-1)/(1-config.α)-1);
 
     # Equations (offset) #
     # Cumulative carbon emissions
-    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*5/3.666);
+    @constraint(model, [i=1:N-1], vars.CCA[i+1] == vars.CCA[i] + vars.Eind[i]*scale);
     # Atmospheric concentration equation
-    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*(5/3.666));
+    @constraint(model, [i=1:N-1], vars.Mₐₜ[i+1] == vars.Mₐₜ[i]*params.ϕ₁₁ + vars.Mᵤₚ[i]*params.ϕ₂₁ + vars.E[i]*scale);
     # Lower ocean concentration
     @constraint(model, [i=1:N-1], vars.Mₗₒ[i+1] == vars.Mₗₒ[i]*params.ϕ₃₃ + vars.Mᵤₚ[i]*config.ϕ₂₃);
     # Shallow ocean concentration
@@ -285,20 +283,20 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     # Capital balance equation
     @NLconstraint(model, [i=1:N-1], vars.K[i+1] <= (1-config.δk)^config.tstep * vars.K[i] + config.tstep*vars.I[i]);
     # Interest rate equation
-    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+params.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(params.α/config.tstep)-1);
+    @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    for i in N-10:N
-        @NLconstraint(model, vars.S[i] == params.optlrsav);
+    for i=N-9:N
+        JuMP.fix(vars.S[i], params.optlrsav; force=true);
     end
     # Initial conditions
-    @constraint(model, vars.CCA[1] == 90.0);
-    @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    JuMP.fix(vars.CCA[1], 90.0; force=true);
+    JuMP.fix(vars.K[1], config.k₀; force=true);
+    JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
+    JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
+    JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
+    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+    JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
@@ -317,8 +315,10 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     params = generate_parameters(config, model);
 
+    scenario_alterations(scenario, config, params);
+
     # Rate limit
-    μ_ubound = [if t < 30 1.0 else config.limμ*value(params.partfract[t]) end for t in 1:config.N];
+    μ_ubound = [if t < 30 1.0 else config.limμ*params.partfract[t] end for t in 1:config.N];
     cprice_ubound = fill(Inf, config.N); #No initial price bound
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
