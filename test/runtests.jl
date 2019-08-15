@@ -160,8 +160,8 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         result = DICE.solve(OptimalPrice, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 2741.2318406380 atol=1e-4
         @info "Limit 2 Degrees Scenario with v2013R(RockyRoad)"
-        #result = DICE.solve(Limit2Degrees, v2013R(RockyRoad), optimizer = optimizer);
-        @test_skip result.results.UTILITY ≈ 2694.4230194779 atol=1e-4
+        result = DICE.solve(Limit2Degrees, v2013R(RockyRoad), optimizer = optimizer);
+        @test result.results.UTILITY ≈ 2694.4230194779 atol=1e-4
         @info "Stern Scenario with v2013R(RockyRoad)"
         result = DICE.solve(Stern, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 124305.6025535197 atol=1e-4

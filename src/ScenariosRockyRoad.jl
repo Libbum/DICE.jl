@@ -49,7 +49,12 @@ function assign_scenario(s::OptimalPriceScenario, model::Model, config::RockyRoa
 end
 
 function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    for i in 2:config.N
+    # The model becomes concave if we have the I.C. fixed,
+    # so we remove this constraint and add it in a less liberal fashion.
+    JuMP.unfix(vars.Tₐₜ[1]);
+    JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    for i in 1:config.N
         JuMP.set_upper_bound(vars.Tₐₜ[i], 2.0);
     end
 end
