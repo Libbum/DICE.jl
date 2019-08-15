@@ -11,7 +11,7 @@
     atfrac2010::Array{Float64,1} # Atmospheric fraction since 2010
 end
 
-function model_results(model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016, eqs::EquationsV2016)
+function model_results(model::JuMP.Model, config::Options, params::ParametersV2016, vars::VariablesV2016, eqs::EquationsV2016)
     years = 2010 .+ (config.tstep*(1:config.N));
     Mₐₜ = value.(vars.Mₐₜ);
     Mₐₜppm = Mₐₜ/2.13;
