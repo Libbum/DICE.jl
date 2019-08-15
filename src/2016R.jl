@@ -331,12 +331,13 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     end
     # Initial conditions
     JuMP.fix(vars.CCA[1], 400.0; force=true);
-    JuMP.fix(vars.K[1], config.k₀; force=true);
     JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
-    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
+    # We can't fix these, the solution becomes concave.
+    @NLconstraint(model, vars.K[1] == config.k₀);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 

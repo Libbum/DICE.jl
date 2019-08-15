@@ -13,7 +13,7 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV201
 end
 
 function assign_scenario(s::OptimalPriceScenario, model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
-    JuMP.set_upper_bound(vars.μ[1], config.μ₀);
+    JuMP.fix(vars.μ[1], config.μ₀; force=true);
 end
 
 function assign_scenario(s::Scenario, model::JuMP.Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
