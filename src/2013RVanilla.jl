@@ -263,15 +263,17 @@ function model_eqs(model::Model, config::VanillaOptions, params::VanillaParamete
     @NLconstraint(model, [i=1:N-1], vars.RI[i] == (1+config.ρ)*(vars.CPC[i+1]/vars.CPC[i])^(config.α/config.tstep)-1);
 
     # Savings rate for asympotic equilibrium
-    @constraint(model, vars.S[51:N] .== params.optlrsav);
+    for i=51:N
+        JuMP.fix(vars.S[i], params.optlrsav; force=true);
+    end
     # Initial conditions
-    @constraint(model, vars.CCA[1] == 90.0);
-    @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    JuMP.fix(vars.CCA[1], 90.0; force=true);
+    JuMP.fix(vars.K[1], config.k₀; force=true);
+    JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
+    JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
+    JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
+    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+    JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 

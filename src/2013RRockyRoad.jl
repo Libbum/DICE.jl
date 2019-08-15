@@ -201,7 +201,6 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,ξ₁,ψ₂,optlrsav,rr,partfract)
 end
 
-#TODO: Consider adding in NLParameter values here
 function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "Calculated Parameters for Rocky Road 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
@@ -230,7 +229,6 @@ end
 
 function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
-    #TODO: Consider making all the configuration values NLParameters, so we never have to pass things like ψ₂ directly
     N = config.N;
     scale = 5/3.666;
     # Equations #

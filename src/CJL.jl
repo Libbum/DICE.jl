@@ -298,17 +298,20 @@ function model_eqs(model::Model, config::OptionsVCJL, params::ParametersVCJL, va
     # Terminal condition for capital
     @constraint(model, 0.02*vars.K[end] <= vars.I[end]);
     # Fix savings assumption for standardization if needed
-    #@constraint(model, vars.S[i=1:N] .== 0.22); #NOTE: This kills all savings??
+    # NOTE: This kills all savings??
+    # for i=1:N
+    #     JuMP.fix(vars.S[i], 0.22; force=true);
+    # end
     # Initial conditions
-    @constraint(model, vars.CCA[1] == 0.0);
-    @constraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Mₐₜ[1] == config.mat₀);
-    @constraint(model, vars.Mᵤₚ[1] == config.mu₀);
-    @constraint(model, vars.Mₗₒ[1] == config.ml₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    @constraint(model, vars.Tₗₒ[1] == config.tocean₀);
+    JuMP.fix(vars.CCA[1], 0.0; force=true);
+    JuMP.fix(vars.K[1], config.k₀; force=true);
+    JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
+    JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
+    JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
+    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+    JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
     #First period predetermined by Kyoto Protocol
-    @constraint(model, vars.μ[1] == 0.005);
+    JuMP.fix(vars.μ[1], 0.005; force=true);
 
     @constraint(model, vars.UTILITY == sum(params.rr[i]*params.L[i]*vars.PERIODU[i]/config.scale1 for i=1:N) + config.scale2);
 
