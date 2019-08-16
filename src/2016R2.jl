@@ -331,6 +331,7 @@ end
 function solve(scenario::Scenario, version::V2016R2;
     config::OptionsV2016R2 = options(version),
     optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=3000,print_frequency_iter=250,sb="yes")) #TODO: 3000 is just for testing
+
     model = Model(optimizer);
 
     # Rate limit
@@ -341,16 +342,15 @@ function solve(scenario::Scenario, version::V2016R2;
     file = "R2Results.jld2";
     output = jldopen(file, "w"); #Overwrite any old data
     close(output);
-    for phi in 1:5 #quint_ψ₂
-        for t2 in 1:5 #quint_t2xco2
-            for ga in 1:5 #quint_gₐ₀
-                for mu in 1:5 #quint_mueq
-                    for gs in 1:5 #quint_gσ₀
-                        idx = [phi, ga, t2, gs, mu]
+    global results;
+    for phi in 1:length(config.quint_ψ₂)
+        for t2 in 1:length(config.quint_t2xco2)
+            for ga in 1:length(config.quint_gₐ₀)
+                for mu in 1:length(config.quint_mueq)
+                    for gs in 1:length(config.quint_gσ₀)
+                        idxs = [phi, ga, t2, gs, mu]
 
-                        model = Model(optimizer);
-
-                        params = generate_parameters(version, config, model, idx);
+                        params = generate_parameters(version, config, model, idxs);
 
                         variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
@@ -359,11 +359,12 @@ function solve(scenario::Scenario, version::V2016R2;
                         assign_scenario(scenario, model, config, params, variables; idx=phi);
 
                         optimize!(model);
-                        #TODO: We force a fail rather than fixing this atm.
+                        #TODO: We force a fail rather than fixing concave issues atm.
                         if JuMP.termination_status(model) == MOI.OPTIMAL || JuMP.termination_status(model) == MOI.LOCALLY_SOLVED
-                            println("ψ₂=", phi, ", t2xco2=", t2, ", gₐ₀=", ga, ", mueq=", mu, ", gσ₀=", gs);
+                            println("Completed ψ₂=", phi, ", t2xco2=", t2, ", gₐ₀=", ga, ", mueq=", mu, ", gσ₀=", gs);
+                            results = model_results(model, config, params, variables, equations);
                             output = jldopen(file, "a");
-                            write(output, string(phi, t2, ga, mu, gs), model_results(model, config, params, variables, equations));
+                            write(output, string(phi, t2, ga, mu, gs), results);
                             close(output);
                         else
                             println("Warning: Failed to solve ", phi, t2, ga, mu, gs);
@@ -373,5 +374,13 @@ function solve(scenario::Scenario, version::V2016R2;
             end
         end
     end
-    output
+
+    #DICENarrative(config,params,model,scenario,version,variables,equations,results)
+
+    # Return the latest results.
+    # This is helpful for when users override the quint functions with one value for all of them.
+    # TODO: Nominally this should be the narrative, but for testing, results are fine.
+    # Probably better to test we are at the end of the loop and return from inside rather than
+    # making everything global.
+    results
 end
