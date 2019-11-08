@@ -208,7 +208,7 @@ end
     cc::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output Consumption
 end
 
-function model_eqs(model::Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
+function model_eqs(scenario::Scenario, model::Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -268,12 +268,20 @@ function model_eqs(model::Model, config::VanillaOptions, params::VanillaParamete
     end
     # Initial conditions
     JuMP.fix(vars.CCA[1], 90.0; force=true);
-    JuMP.fix(vars.K[1], config.k₀; force=true);
     JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
-    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
+
+    if typeof(scenario) <: OptimalPriceScenario
+        JuMP.fix(vars.K[1], config.k₀; force=true);
+        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+    elseif typeof(scenario) <: BasePriceScenario
+        # We can't fix these, the solution becomes concave.
+        # This is something buggy in JuMP I think. Haven't been able to pin it down.
+        @NLconstraint(model, vars.K[1] == config.k₀);
+        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    end
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
@@ -307,7 +315,7 @@ function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables);
 
     optimize!(model);
 

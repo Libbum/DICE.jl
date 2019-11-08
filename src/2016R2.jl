@@ -106,7 +106,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016R2)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-function generate_parameters(version::V2016R2, c::OptionsV2016R2, model::JuMP.Model)
+function generate_parameters(c::OptionsV2016R2, model::JuMP.Model)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -213,7 +213,7 @@ function model_vars(version::V2016R2, model::JuMP.Model, N::Int64, cca_ubound::F
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
-function model_eqs(scenario::Scenario, version::V2016R2, model::JuMP.Model, config::OptionsV2016R2, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -305,7 +305,7 @@ function solve(scenario::Scenario, version::V2016R2;
 
     model = Model(optimizer);
 
-    params = generate_parameters(version, config, model);
+    params = generate_parameters(config, model);
 
     # Rate limit
     μ_ubound = fill(config.limμ, config.N);
@@ -313,7 +313,7 @@ function solve(scenario::Scenario, version::V2016R2;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(scenario, version, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables);
 
     optimize!(model);
 

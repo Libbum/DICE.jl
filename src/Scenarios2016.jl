@@ -34,7 +34,7 @@ function assign_scenario(s::OptimalPriceScenario, model::Model, config::Options,
 end
 
 function assign_scenario(s::Scenario, model::JuMP.Model, config::Options, params::ParametersV2016, vars::VariablesV2016; idx::Int64=1)
-    if config <: OptionsV2016R
+    if typeof(config) <: OptionsV2016R
         error("$(s) is not a valid scenario for v2016R beta");
     else
         error("$(s) is not a valid scenario for v2016R2");

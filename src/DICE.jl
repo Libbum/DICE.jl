@@ -5,8 +5,6 @@ using JuMP;
 #We don't package it here though, and assume you have this set up on your system already.
 using Ipopt;
 
-using JLD2;
-
 include("Abstractions.jl")
 
 #DICE Versions
