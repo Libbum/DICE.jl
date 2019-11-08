@@ -1,6 +1,5 @@
 module DICE
 
-#Don't polute the namespace. We want to use `solve` ourselves.
 using JuMP;
 #Ipopt is distributed under the EPL.
 #We don't package it here though, and assume you have this set up on your system already.
@@ -41,7 +40,7 @@ export solve, options
 
 # Include all version implementations
 include("2013R.jl")
-include("2016R.jl")
+include("2016.jl")
 include("CJL.jl")
 
 end

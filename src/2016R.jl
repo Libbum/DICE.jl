@@ -20,15 +20,6 @@ end
 
 export v2016R
 
-@extend struct OptionsV2016 <: Options
-    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
-    μ₀::Float64 #Initial emissions control rate for base case 2015
-    tnopol::Float64 #Period before which no emissions controls base
-    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
-    gcprice::Float64 #Growth rate of base carbon price per year
-    ψ₁₀::Float64 #Initial damage intercept
-end
-
 function options(version::V2016R;
     N::Int = 100, #Number of years to calculate (from 2015 onwards)
     tstep::Int = 5, #Years per Period
@@ -81,10 +72,10 @@ function options(version::V2016R;
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.0302455265681763, #Multiplicative scaling coefficient
     scale2::Float64 = -10993.704) #Additive scaling coefficient
-    OptionsV2016(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,e₀,μ₀,tnopol,cprice₀,gcprice,ψ₁₀)
+    OptionsV2016R(N,tstep,α,ρ,γₑ,pop₀,popadj,popasym,δk,q₀,k₀,a₀,ga₀,δₐ,gσ₁,δσ,eland₀,deland,mat₀,mu₀,ml₀,mateq,mueq,mleq,ϕ₁₂,ϕ₂₃,t2xco2,fₑₓ0,fₑₓ1,tocean₀,tatm₀,ξ₁,ξ₃,ξ₄,η,ψ₁,ψ₂,ψ₃,θ₂,pback,gback,limμ,fosslim,scale1,scale2,e₀,μ₀,tnopol,cprice₀,gcprice,ψ₁₀)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
+function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016R)
     println(io, "Options for 2016R beta version");
     println(io, "Time step");
     println(io, "N: $(opt.N), tstep: $(opt.tstep)");
@@ -116,16 +107,7 @@ function Base.show(io::IO, ::MIME"text/plain", opt::OptionsV2016)
     print(io, "scale1: $(opt.scale1), scale2: $(opt.scale2)");
 end
 
-@extend struct ParametersV2016 <: Parameters
-    pbacktime::Array{Float64,1} # Backstop price
-    cpricebase::Array{Float64,1} # Carbon price in base case
-    rr::Array{Float64,1} # Average utility social discount rate
-    optlrsav::Float64 # Optimal savings rate
-    ψ₂::JuMP.NonlinearParameter
-    cumtree::Array{Float64,1} # Cumulative from land
-end
-
-function generate_parameters(c::OptionsV2016, model::JuMP.Model)
+function generate_parameters(c::OptionsV2016R, model::JuMP.Model)
     optlrsav::Float64 = (c.δk + .004)/(c.δk + .004c.α + c.ρ)*c.γₑ; # Optimal savings rate
     ϕ₁₁::Float64 = 1 - c.ϕ₁₂; # Carbon cycle transition matrix coefficient
     ϕ₂₁::Float64 = c.ϕ₁₂*c.mateq/c.mueq; # Carbon cycle transition matrix coefficient
@@ -198,36 +180,6 @@ function generate_parameters(c::OptionsV2016, model::JuMP.Model)
     ParametersV2016(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,rr,optlrsav,ψ₂,cumtree)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
-    println(io, "Calculated Parameters for 2016R beta");
-    println(io, "Optimal savings rate: $(opt.optlrsav)");
-    println(io, "Carbon cycle transition matrix coefficients");
-    println(io, "ϕ₁₁: $(opt.ϕ₁₁), ϕ₂₁: $(opt.ϕ₂₁), ϕ₂₂: $(opt.ϕ₂₂), ϕ₃₂: $(opt.ϕ₃₂), ϕ₃₃: $(opt.ϕ₃₃)");
-    println(io, "2015 Carbon intensity: $(opt.σ₀)");
-    println(io, "Climate model parameter: $(opt.λ)");
-    println(io, "Backstop price: $(opt.pbacktime)");
-    println(io, "Growth rate of productivity: $(opt.gₐ)");
-    println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(opt.rr)");
-    println(io, "Base case carbon price: $(opt.cpricebase)");
-    println(io, "Population and labour: $(opt.L)");
-    println(io, "Total factor productivity: $(opt.A)");
-    println(io, "Δσ: $(opt.gσ)");
-    println(io, "σ: $(opt.σ)");
-    println(io, "cumtree: $(opt.cumtree)");
-    println(io, "θ₁: $(opt.θ₁)");
-    print(io, "Exogenious forcing: $(opt.fₑₓ)");
-end
-
-@extend struct VariablesV2016 <: Variables
-    Eind::Array{VariableRef,1} # Industrial emissions (GtCO2 per year)
-    Ω::Array{VariableRef,1} # Damages as fraction of gross output
-    Λ::Array{VariableRef,1} # Cost of emissions reductions  (trillions 2005 USD per year)
-    CPRICE::Array{VariableRef,1} # Carbon price (2005$ per ton of CO2)
-    CEMUTOTPER::Array{VariableRef,1} # Period utility
-    CCATOT::Array{VariableRef,1} # Total carbon emissions (GTC)
-end
-
 #NOTE: CCATOT and the Tₐₜ upper bound is the only difference tho the 2013R models.
 function model_vars(version::V2016R, model::Model, N::Int64, cca_ubound::Float64, μ_ubound::Array{Float64,1}, cprice_ubound::Array{Float64,1})
     # Variables #
@@ -262,12 +214,8 @@ function model_vars(version::V2016R, model::Model, N::Int64, cca_ubound::Float64
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
-@extend struct EquationsV2016 <: Equations
-    cc::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output Consumption
-end
-
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     scale = 5/3.666;
 
@@ -336,6 +284,7 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
     # We can't fix these, the solution becomes concave.
+    # This is something buggy in JuMP I think. Haven't been able to pin it down.
     @NLconstraint(model, vars.K[1] == config.k₀);
     @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
 
@@ -344,14 +293,14 @@ function model_eqs(model::Model, config::OptionsV2016, params::ParametersV2016, 
     # Objective function
     @objective(model, Max, vars.UTILITY);
 
+    assign_scenario(scenario, model, config, params, vars);
+
     EquationsV2016(eeq,cc)
 end
 
-include("Scenarios2016R.jl")
-include("Results2016R.jl")
 
 function solve(scenario::Scenario, version::V2016R;
-    config::OptionsV2016 = options(version),
+    config::OptionsV2016R = options(version),
     optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
     model = Model(optimizer);
 
@@ -363,9 +312,7 @@ function solve(scenario::Scenario, version::V2016R;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(model, config, params, variables);
-
-    assign_scenario(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables);
 
     optimize!(model);
 

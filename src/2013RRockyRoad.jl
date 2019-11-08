@@ -227,7 +227,7 @@ end
     yy::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output net equation
 end
 
-function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     N = config.N;
     scale = 5/3.666;
@@ -289,17 +289,25 @@ function model_eqs(model::Model, config::RockyRoadOptions, params::RockyRoadPara
     end
     # Initial conditions
     JuMP.fix(vars.CCA[1], 90.0; force=true);
-    JuMP.fix(vars.K[1], config.k₀; force=true);
     JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
-    JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
-    JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
+    if typeof(scenario) <: Limit2DegreesScenario
+        # We have some issues with getting this to converge
+        JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
+        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+        @NLconstraint(model, vars.K[1] == config.k₀);
+    else
+        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+        JuMP.fix(vars.K[1], config.k₀; force=true);
+    end
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
     # Objective function
     @objective(model, Max, vars.UTILITY);
+
+    assign_scenario(scenario, model, config, params, vars);
 
     RockyRoadEquations(eeq,yy)
 end
@@ -321,9 +329,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(model, config, params, variables);
-
-    assign_scenario(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables);
 
     optimize!(model);
 

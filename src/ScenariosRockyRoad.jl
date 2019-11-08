@@ -28,7 +28,7 @@ function scenario_alterations(s::Scenario, config::RockyRoadOptions, params::Roc
 end
 
 function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    JuMP.set_value(params.ψ₂, 0.0);
+    JuMP.set_value(params.ψ₂, 0.000001);
     optimize!(model);
 
     photel = value.(vars.CPRICE);
@@ -42,19 +42,14 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOp
 end
 
 function assign_scenario(s::OptimalPriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    JuMP.set_upper_bound(vars.μ[1], config.μ₀);
     for i in 2:config.N
-        JuMP.delete_upper_bound(vars.μ[i]);
+        JuMP.set_upper_bound(vars.μ[i], Inf);
     end
+    JuMP.set_upper_bound(vars.μ[1], config.μ₀);
 end
 
 function assign_scenario(s::Limit2DegreesScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    # The model becomes concave if we have the I.C. fixed,
-    # so we remove this constraint and add it in a less liberal fashion.
-    JuMP.unfix(vars.Tₐₜ[1]);
-    JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    for i in 1:config.N
+    for i in 2:config.N
         JuMP.set_upper_bound(vars.Tₐₜ[i], 2.0);
     end
 end
