@@ -20,15 +20,6 @@ end
 
 export v2016R
 
-@extend struct OptionsV2016R <: Options
-    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
-    μ₀::Float64 #Initial emissions control rate for base case 2015
-    tnopol::Float64 #Period before which no emissions controls base
-    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
-    gcprice::Float64 #Growth rate of base carbon price per year
-    ψ₁₀::Float64 #Initial damage intercept
-end
-
 function options(version::V2016R;
     N::Int = 100, #Number of years to calculate (from 2015 onwards)
     tstep::Int = 5, #Years per Period
@@ -224,7 +215,7 @@ function model_vars(version::V2016R, model::Model, N::Int64, cca_ubound::Float64
 end
 
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016)
     N = config.N;
     scale = 5/3.666;
 
@@ -293,6 +284,7 @@ function model_eqs(model::Model, config::OptionsV2016R, params::ParametersV2016,
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
     # We can't fix these, the solution becomes concave.
+    # This is something buggy in JuMP I think. Haven't been able to pin it down.
     @NLconstraint(model, vars.K[1] == config.k₀);
     @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
 
@@ -301,22 +293,11 @@ function model_eqs(model::Model, config::OptionsV2016R, params::ParametersV2016,
     # Objective function
     @objective(model, Max, vars.UTILITY);
 
+    assign_scenario(scenario, model, config, params, vars);
+
     EquationsV2016(eeq,cc)
 end
 
-function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016)
-    JuMP.set_value(params.ψ₂, 0.0);
-    optimize!(model);
-
-    photel = value.(vars.CPRICE);
-
-    for i in 1:config.N
-        if i <= config.tnopol
-            JuMP.set_upper_bound(vars.CPRICE[i], max(photel[i],params.cpricebase[i]));
-        end
-    end
-    JuMP.set_value(params.ψ₂, config.ψ₂);
-end
 
 function solve(scenario::Scenario, version::V2016R;
     config::OptionsV2016R = options(version),
@@ -331,9 +312,7 @@ function solve(scenario::Scenario, version::V2016R;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(model, config, params, variables);
-
-    assign_scenario(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables);
 
     optimize!(model);
 

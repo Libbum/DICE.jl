@@ -28,6 +28,25 @@ function Base.show(io::IO, ::MIME"text/plain", opt::ParametersV2016)
     print(io, "Exogenious forcing: $(opt.fₑₓ)");
 end
 
+@extend struct OptionsV2016R <: Options
+    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2015
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
+    ψ₁₀::Float64 #Initial damage intercept
+end
+
+@extend struct OptionsV2016R2 <: Options
+    e₀::Float64 #Industrial emissions 2015 (GtCO2 per year)
+    μ₀::Float64 #Initial emissions control rate for base case 2015
+    tnopol::Float64 #Period before which no emissions controls base
+    cprice₀::Float64 #Initial base carbon price (2010$ per tCO2)
+    gcprice::Float64 #Growth rate of base carbon price per year
+    ψ₁₀::Float64 #Initial damage intercept
+end
+
+
 @extend struct VariablesV2016 <: Variables
     Eind::Array{JuMP.VariableRef,1} # Industrial emissions (GtCO2 per year)
     Ω::Array{JuMP.VariableRef,1} # Damages as fraction of gross output
