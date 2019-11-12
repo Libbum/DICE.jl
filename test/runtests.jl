@@ -176,7 +176,7 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 124305.6025535197 atol=1e-4
         @info "Stern Calibrated Scenario with v2013R(RockyRoad)"
         result = DICE.solve(SternCalibrated, v2013R(RockyRoad), optimizer = optimizer);
-        @test result.results.UTILITY ≈ -8469.00597231849 atol=1e-4
+        @test result.results.UTILITY ≈ -8469.005859988243 atol=1e-4
         @info "Copenhagen Scenario with v2013R(RockyRoad)"
         result = DICE.solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
         # The value is lower here because GAMS results truncate a lot,

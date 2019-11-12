@@ -28,7 +28,7 @@ function scenario_alterations(s::Scenario, config::RockyRoadOptions, params::Roc
 end
 
 function assign_scenario(s::BasePriceScenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::VariablesV2013)
-    JuMP.set_value(params.ψ₂, 0.000001);
+    JuMP.set_value(params.ψ₂, 0.0);
     optimize!(model);
 
     photel = value.(vars.CPRICE);

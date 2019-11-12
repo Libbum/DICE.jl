@@ -297,6 +297,9 @@ function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, p
         JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
         @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
         @NLconstraint(model, vars.K[1] == config.k₀);
+    elseif typeof(scenario) <: OptimalPriceScenario
+        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+        @NLconstraint(model, vars.K[1] == config.k₀);
     else
         JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
         JuMP.fix(vars.K[1], config.k₀; force=true);
