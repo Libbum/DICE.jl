@@ -173,7 +173,7 @@ function generate_parameters(c::OptionsV2016R2, model::JuMP.Model)
         fₑₓ[i] = if i < 18
                         c.fₑₓ0+(1/17)*(c.fₑₓ1-c.fₑₓ0)*(i-1)
                     else
-                        c.fₑₓ1-c.fₑₓ0
+                        c.fₑₓ1
                     end;
     end
     ParametersV2016(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,rr,optlrsav,ψ₂,cumtree)
