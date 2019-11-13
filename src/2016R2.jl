@@ -279,15 +279,10 @@ function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
-    if typeof(scenario) <: OptimalPriceScenario
-        JuMP.fix(vars.K[1], config.k₀; force=true);
-        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
-    elseif typeof(scenario) <: BasePriceScenario
-        # We can't fix these, the solution becomes concave.
-        # This is something buggy in JuMP I think. Haven't been able to pin it down.
-        @NLconstraint(model, vars.K[1] == config.k₀);
-        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
-    end
+    # We can't fix these, the solution becomes concave.
+    # This is something buggy in JuMP I think. Haven't been able to pin it down.
+    @NLconstraint(model, vars.K[1] == config.k₀);
+    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
