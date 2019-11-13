@@ -197,10 +197,13 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @info "Base Price Scenario with v2016R2"
         result = DICE.solve(BasePrice, v2016R2(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4489.233548950728 atol=1e-4
-        # Slightly better utility than CONOPT found here.
-        @info "Optimal Price Scenario with v2016R2"
-        result = DICE.solve(OptimalPrice, v2016R2(), optimizer = optimizer);
-        @test result.results.UTILITY ≈ 4518.039198804694 atol=1e-4
+        # This has an infinite spool on Travis.
+        if get(ENV, "TRAVIS", "false") == "false"
+            # Slightly better utility than CONOPT found here.
+            @info "Optimal Price Scenario with v2016R2"
+            result = DICE.solve(OptimalPrice, v2016R2(), optimizer = optimizer);
+            @test result.results.UTILITY ≈ 4518.039198804694 atol=1e-4
+        end
     end
 end
 
