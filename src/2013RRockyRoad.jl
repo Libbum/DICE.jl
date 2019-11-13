@@ -201,7 +201,8 @@ function generate_parameters(c::RockyRoadOptions, model::Model)
     RockyRoadParameters(ϕ₁₁,ϕ₂₁,ϕ₂₂,ϕ₃₂,ϕ₃₃,σ₀,λ,gₐ,Etree,L,A,gσ,σ,θ₁,fₑₓ,pbacktime,cpricebase,ξ₁,ψ₂,optlrsav,rr,partfract)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
+function Base.show(io::IO, opt::RockyRoadParameters)
+    ctx = IOContext(io, :limit => true, :compact => true);
     println(io, "Calculated Parameters for Rocky Road 2013R");
     println(io, "Optimal savings rate: $(opt.optlrsav)");
     println(io, "Carbon cycle transition matrix coefficients");
@@ -209,18 +210,41 @@ function Base.show(io::IO, ::MIME"text/plain", opt::RockyRoadParameters)
     println(io, "2010 Carbon intensity: $(opt.σ₀)");
     println(io, "Climate model parameter: $(opt.λ)");
     println(io, "Transient TSC Correction: $(opt.ξ₁)");
-    println(io, "Backstop price: $(opt.pbacktime)");
-    println(io, "Growth rate of productivity: $(opt.gₐ)");
-    println(io, "Emissions from deforestation: $(opt.Etree)");
-    println(io, "Avg utility social discout rate: $(opt.rr)");
-    println(io, "Base case carbon price: $(opt.cpricebase)");
-    println(io, "Population and labour: $(opt.L)");
-    println(io, "Total factor productivity: $(opt.A)");
-    println(io, "Δσ: $(opt.gσ)");
-    println(io, "σ: $(opt.σ)");
-    println(io, "θ₁: $(opt.θ₁)");
-    println(io, "Exogenious forcing: $(opt.fₑₓ)");
-    print(io, "Fraction of emissions in control regieme: $(opt.partfract)");
+    println(io, "Backstop price: ");
+    show(ctx, opt.pbacktime);
+    println(io, "");
+    print(io, "Growth rate of productivity: ");
+    show(ctx, opt.gₐ);
+    println(io, "");
+    print(io, "Emissions from deforestation: ");
+    show(ctx, opt.Etree);
+    println(io, "");
+    print(io, "Avg utility social discout rate: ");
+    show(ctx, opt.rr);
+    println(io, "");
+    print(io, "Base case carbon price: ");
+    show(ctx, opt.cpricebase);
+    println(io, "");
+    print(io, "Population and labour: ");
+    show(ctx, opt.L);
+    println(io, "");
+    print(io, "Total factor productivity: ");
+    show(ctx, opt.A);
+    println(io, "");
+    print(io, "Δσ: ");
+    show(ctx, opt.gσ);
+    println(io, "");
+    print(io, "σ: ");
+    show(ctx, opt.σ);
+    println(io, "");
+    print(io, "θ₁: ");
+    show(ctx, opt.θ₁);
+    println(io, "");
+    print(io, "Exogenious forcing: ");
+    show(ctx, opt.fₑₓ);
+    println(io, "");
+    print(io, "Fraction of emissions in control regieme: ");
+    show(ctx, opt.partfract);
 end
 
 @extend struct RockyRoadEquations <: Equations
