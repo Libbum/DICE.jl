@@ -14,8 +14,6 @@ DICE.@extend mutable struct ExtendTest <: TestType
     five::T
 end
 
-#missing = @macroexpand DICE.@extend mutable struct missing <: Missing end
-
 @testset "Abstractions" begin
     @test ExtendTest <: TestType
 
@@ -28,7 +26,7 @@ end
     @test isa(etest.four, Vector{Int})
     @test isa(etest.five, Int)
 
- #   @test isa(missing.args..., ErrorException)
+    @test_throws LoadError @macroexpand DICE.@extend mutable struct missingTest <: Missing end
 end
 
 # The tests shouldn't need to converge for long times,
