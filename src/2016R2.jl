@@ -59,7 +59,7 @@ function options(version::V2016R2;
     η::Float64 = 3.6813, #Forcings of equilibrium CO2 doubling (Wm-2)
     ψ₁₀::Float64 = 0.0, #Initial damage intercept
     ψ₁::Float64 = 0.0, #Damage intercept
-    ψ₂::Float64 = 0.0023, #Damage quadratic term
+    ψ₂::Float64 = 0.00236, #Damage quadratic term
     ψ₃::Float64 = 2.0, #Damage exponent
     θ₂::Float64 = 2.6, #Exponent of control cost function
     pback::Float64 = 550.0, #Cost of backstop 2010$ per tCO2 2015
@@ -281,8 +281,13 @@ function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
     # We can't fix these, the solution becomes concave.
     # This is something buggy in JuMP I think. Haven't been able to pin it down.
-    @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    if typeof(scenario) <: OptimalPriceScenario
+        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+        JuMP.fix(vars.K[1], config.k₀; force=true);
+    else
+        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+        @NLconstraint(model, vars.K[1] == config.k₀);
+    end
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
