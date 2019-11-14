@@ -38,7 +38,6 @@ model = Model(optimizer);
 modelrr = Model(optimizer);
 model2016 = Model(optimizer);
 model2016r2 = Model(optimizer);
-modelcjl = Model(optimizer);
 vanilla_opt = options(v2013R());
 rr_opt = options(v2013R(RockyRoad));
 v2016_opt = options(v2016R());
@@ -47,7 +46,6 @@ vanilla_params = DICE.generate_parameters(vanilla_opt);
 rr_params = DICE.generate_parameters(rr_opt, modelrr);
 v2016_params = DICE.generate_parameters(v2016_opt, model2016);
 v2016r2_params = DICE.generate_parameters(v2016r2_opt, model2016r2);
-cjl_params = DICE.generate_parameters(cjl_opt);
 
 @testset "Types Display" begin
     @testset "Flavour" begin
