@@ -30,12 +30,13 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 - v2013R (Vanilla Version)
 - v2013R (Rocky Road Version)
 - v2016R Beta
+- v2016R2
 
 **In testing phase**
-- v2016R2
 - DICE-CJL
 
 **Planned**
+- v2016R3
 -  van der Ploeg safe carbon budget
 
 Suggestions and additions welcomed.

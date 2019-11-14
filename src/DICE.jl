@@ -41,6 +41,5 @@ export solve, options
 # Include all version implementations
 include("2013R.jl")
 include("2016.jl")
-include("CJL.jl")
 
 end
