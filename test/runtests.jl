@@ -176,9 +176,10 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @info "Stern Scenario with v2013R(RockyRoad)"
         result = DICE.solve(Stern, v2013R(RockyRoad), optimizer = optimizer);
         @test result.results.UTILITY ≈ 124305.6025535197 atol=1e-4
+        # Tolerance is adjusted here due to small differences between output of Ipopt 3.12.10 and 3.12.13
         @info "Stern Calibrated Scenario with v2013R(RockyRoad)"
         result = DICE.solve(SternCalibrated, v2013R(RockyRoad), optimizer = optimizer);
-        @test result.results.UTILITY ≈ -8469.005859988243 atol=1e-4
+        @test result.results.UTILITY ≈ -8469.005859988243 atol=1e-3
         @info "Copenhagen Scenario with v2013R(RockyRoad)"
         result = DICE.solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
         # The value is lower here because GAMS results truncate a lot,
@@ -197,12 +198,9 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         @info "Base Price Scenario with v2016R2"
         result = DICE.solve(BasePrice, v2016R2(), optimizer = optimizer);
         @test result.results.UTILITY ≈ 4485.6767040826 atol=1e-4
-        # This has an infinite spool on Travis.
-        #if get(ENV, "TRAVIS", "false") == "false"
-            @info "Optimal Price Scenario with v2016R2"
-            result = DICE.solve(OptimalPrice, v2016R2(), optimizer = optimizer);
-            @test result.results.UTILITY ≈ 4515.8311036492 atol=1e-4
-        #end
+        @info "Optimal Price Scenario with v2016R2"
+        result = DICE.solve(OptimalPrice, v2016R2(), optimizer = optimizer);
+        @test result.results.UTILITY ≈ 4515.8311036492 atol=1e-4
     end
 end
 
