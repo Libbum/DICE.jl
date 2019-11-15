@@ -48,16 +48,17 @@ Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP
 We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
 If you don't have these packages on your system, they will be installed when you add this package.
 
-The current recommendation however, is to use the latest version of the Ipopt solver (at time of writing: 3.12.13).
-If you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated.
-Then, add the following to your `~/.julia/config/startup.jl` file (create one if it doesn't exist)
+The current packaged version of Ipopt is 3.12.10, however if you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated to the latest release (currently 3.12.13).
+This package is tested against both of these two versions, so feel free to use either.
+
+To use the non-packaged (more recent) version, add the following to your `~/.julia/config/startup.jl` file (create one if it doesn't exist)
 
 ```julia
 ENV["JULIA_IPOPT_LIBRARY_PATH"] = "/usr/lib"
 ENV["JULIA_IPOPT_EXECUTABLE_PATH"] = "/usr/bin"
 ```
 
-Other distributions may use a different path, so it would be useful to check `which ipopt` to verify the correct path here.
+This is what Arch uses, other distributions may use a different path&mdash;so it would be useful to check `which ipopt` to verify the correct path here.
 
 If you've already built Ipopt.jl with the bundled version, simply build it again once your environment is set
 
