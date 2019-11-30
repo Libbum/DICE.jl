@@ -283,10 +283,15 @@ function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, para
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
-    # We can't fix these, the solution becomes concave.
-    # This is something buggy in JuMP I think. Haven't been able to pin it down.
-    @NLconstraint(model, vars.K[1] == config.k₀);
-    @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    if linearSolver() == "mumps"
+        # We can't fix these, the solution becomes concave.
+        # This is something buggy in JuMP I think. Haven't been able to pin it down.
+        @NLconstraint(model, vars.K[1] == config.k₀);
+        @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
+    else
+        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
+        JuMP.fix(vars.K[1], config.k₀; force=true);
+    end
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
 
@@ -301,7 +306,7 @@ end
 
 function solve(scenario::Scenario, version::V2016R;
     config::OptionsV2016R = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
     model = Model(optimizer);
 
     params = generate_parameters(config, model);

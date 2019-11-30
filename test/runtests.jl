@@ -31,7 +31,8 @@ end
 
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
-optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes");
+linear_solver = DICE.linearSolver();
+optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes", linear_solver=linear_solver);
 model = Model(optimizer);
 modelrr = Model(optimizer);
 model2016 = Model(optimizer);
@@ -184,7 +185,12 @@ base = DICE.solve(BasePrice, v2013R(), optimizer = optimizer);
         result = DICE.solve(Copenhagen, v2013R(RockyRoad), optimizer = optimizer);
         # The value is lower here because GAMS results truncate a lot,
         # giving us a slightly lower utility due to the inverse relationship of cprice and mu
-        @test result.results.UTILITY ≈ 2724.1458144691937 atol=1e-4
+        # NOTE: This may not be the only thing. MA97 gets closer to the CONOPT result but not exact.
+        if linear_solver == "mumps"
+            @test result.results.UTILITY ≈ 2724.1458144691937 atol=1e-4
+        else
+            @test result.results.UTILITY ≈ 2725.4158209963616 atol=1e-4
+        end
     end
     @testset "2016R beta" begin
         @info "Base Price Scenario with v2016R"
@@ -206,5 +212,9 @@ end
 
 #Show model
 @testset "Display" begin
-    @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nA JuMP Model\nMaximization problem with:\nVariables: 1561\nObjective function type: VariableRef\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 656 constraints\n`GenericQuadExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 240 constraints\n`VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 15 constraints\n`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 716 constraints\n`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 298 constraints\nNonlinear: 539 constraints\nModel mode: AUTOMATIC\nCachingOptimizer state: ATTACHED_OPTIMIZER\nSolver name: Ipopt\nNames registered in the model: C, CCA, CEMUTOTPER, CPC, CPRICE, DAMAGES, E, Eind, FORC, I, K, MCABATE, Mᵤₚ, Mₐₜ, Mₗₒ, PERIODU, RI, S, Tₐₜ, Tₗₒ, UTILITY, Y, YGROSS, YNET, Λ, Ω, μ"
+    if linear_solver == "mumps"
+        @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nA JuMP Model\nMaximization problem with:\nVariables: 1561\nObjective function type: VariableRef\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 656 constraints\n`GenericQuadExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 240 constraints\n`VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 15 constraints\n`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 716 constraints\n`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 298 constraints\nNonlinear: 539 constraints\nModel mode: AUTOMATIC\nCachingOptimizer state: ATTACHED_OPTIMIZER\nSolver name: Ipopt\nNames registered in the model: C, CCA, CEMUTOTPER, CPC, CPRICE, DAMAGES, E, Eind, FORC, I, K, MCABATE, Mᵤₚ, Mₐₜ, Mₗₒ, PERIODU, RI, S, Tₐₜ, Tₗₒ, UTILITY, Y, YGROSS, YNET, Λ, Ω, μ"
+    else
+        @test sprint(show, "text/plain", base) == "Base (current policy) carbon price scenario using v2013R (Vanilla flavour).\nA JuMP Model\nMaximization problem with:\nVariables: 1561\nObjective function type: VariableRef\n`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 655 constraints\n`GenericQuadExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 240 constraints\n`VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 17 constraints\n`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 714 constraints\n`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 297 constraints\nNonlinear: 538 constraints\nModel mode: AUTOMATIC\nCachingOptimizer state: ATTACHED_OPTIMIZER\nSolver name: Ipopt\nNames registered in the model: C, CCA, CEMUTOTPER, CPC, CPRICE, DAMAGES, E, Eind, FORC, I, K, MCABATE, Mᵤₚ, Mₐₜ, Mₗₒ, PERIODU, RI, S, Tₐₜ, Tₗₒ, UTILITY, Y, YGROSS, YNET, Λ, Ω, μ"
+    end
 end

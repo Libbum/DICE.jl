@@ -297,7 +297,8 @@ function model_eqs(scenario::Scenario, model::Model, config::VanillaOptions, par
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
 
-    if typeof(scenario) <: OptimalPriceScenario
+    isMumps = linearSolver() == "mumps";
+    if !isMumps || typeof(scenario) <: OptimalPriceScenario
         JuMP.fix(vars.K[1], config.k₀; force=true);
         JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     elseif typeof(scenario) <: BasePriceScenario
@@ -318,7 +319,7 @@ include("ScenariosVanilla.jl")
 
 function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
 
     model = Model(optimizer);
 

@@ -36,6 +36,17 @@ end
 function solve end
 function options end
 
+# Test if system has HSL MA97 installed, fall back to MUMPS if not.
+function linearSolver()
+    prob = Ipopt.createProblem(1,[1.],[1.],1,[1.],[1.],1,1,sum,sum,sum,sum);
+    try
+        Ipopt.addOption(prob, "linear_solver", "ma97");
+        "ma97"
+    catch
+        "mumps"
+    end
+end
+
 export solve, options
 
 # Include all version implementations

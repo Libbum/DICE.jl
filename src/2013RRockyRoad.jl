@@ -316,12 +316,13 @@ function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, p
     JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
-    if typeof(scenario) <: Limit2DegreesScenario
+    isMumps = linearSolver() == "mumps";
+    if isMumps && typeof(scenario) <: Limit2DegreesScenario
         # We have some issues with getting this to converge
         JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
         @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
         @NLconstraint(model, vars.K[1] == config.k₀);
-    elseif typeof(scenario) <: OptimalPriceScenario
+    elseif isMumps && typeof(scenario) <: OptimalPriceScenario
         @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
         @NLconstraint(model, vars.K[1] == config.k₀);
     else
@@ -343,7 +344,7 @@ include("ScenariosRockyRoad.jl")
 
 function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
     model = Model(optimizer);
 
     params = generate_parameters(config, model);
