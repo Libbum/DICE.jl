@@ -49,9 +49,9 @@ function linearSolver(solver_name::String = "ma97")
     if occursin("ma", solver_name)
         Ipopt.addOption(prob, "linear_solver", "ma27");
         try
-            inital_check = runLinearSolverCheck(prob);
-            if solver_name != inital_check && inital_check == "mumps"
-                @info "Unable to set linear_solver = $(solver_name), defaulting to MUMPS."
+            inital_check = Ipopt.solveProblem(prob);
+            if inital_check == "mumps"
+                # No HSL was found on the system, we return with fallback.
                 return inital_check
             end
         catch
@@ -86,8 +86,8 @@ end
 
 function runLinearSolverCheck(prob::IpoptProblem)
     result_code = Ipopt.solveProblem(prob);
-    println("result $(result_code)");
     if Ipopt.ApplicationReturnStatus[result_code] == :Invalid_Option
+        @info "Unable to set linear_solver = $(solver_name), defaulting to MUMPS."
         return "mumps"
     else
         error("Attempts to identify linear solvers on system returned unexpected results.");
