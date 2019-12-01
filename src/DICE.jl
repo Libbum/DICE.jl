@@ -46,7 +46,8 @@ function linearSolver(solver_name::String = "ma97")
         # Outer try will fail if solver string is not in the list of
         # possible Ipopt solvers.
         # For now that's ma27, ma57, ma77, ma86, ma97, pardiso, wsmp, mumps, custom
-        Ipopt.addOption(prob, "linear_solver", solver_name);
+        travis = Ipopt.addOption(prob, "linear_solver", solver_name);
+        println("travis, err $(travis)");
         try
             # Inner try attempts to run the dummy program and will crash because
             # the dummy is malformed.
