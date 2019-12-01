@@ -39,6 +39,7 @@ function options end
 # Test if system has HSL MA97 installed, fall back to MUMPS if not.
 function linearSolver(solver_name::String = "ma97")
     prob = Ipopt.createProblem(1,[1.],[1.],1,[1.],[1.],1,1,sum,sum,sum,sum);
+    println("Travis, do we arrive here even?");
     #Ipopt.addOption(prob, "sb", "yes");
     #Ipopt.addOption(prob, "print_level", 0);
     try
