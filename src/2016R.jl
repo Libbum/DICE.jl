@@ -215,7 +215,7 @@ function model_vars(version::V2016R, model::Model, N::Int64, cca_ubound::Float64
 end
 
 #NOTE: MCABATE and CPRICE are the same in the original, can one of these be removed?...
-function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, params::ParametersV2016, vars::VariablesV2016, isMumps::Bool)
     N = config.N;
     scale = 5/3.666;
 
@@ -283,7 +283,7 @@ function model_eqs(scenario::Scenario, model::Model, config::OptionsV2016R, para
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
-    if linearSolver() == "mumps"
+    if isMumps
         # We can't fix these, the solution becomes concave.
         # This is something buggy in JuMP I think. Haven't been able to pin it down.
         @NLconstraint(model, vars.K[1] == config.k₀);
@@ -307,6 +307,10 @@ end
 function solve(scenario::Scenario, version::V2016R;
     config::OptionsV2016R = options(version),
     optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
+
+    # Generate a solver test to implement DICE.jl#35 hacks.
+    isMumps = optimizer.kwargs[:linear_solver] == "mumps";
+
     model = Model(optimizer);
 
     params = generate_parameters(config, model);
@@ -317,7 +321,7 @@ function solve(scenario::Scenario, version::V2016R;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables, isMumps);
 
     optimize!(model);
 

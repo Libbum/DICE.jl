@@ -31,8 +31,8 @@ end
 
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
-linear_solver = DICE.linearSolver();
-@info "Using linear solver $(linear_solver)"
+const linear_solver = DICE.linearSolver();
+const isMumps = linear_solver == "mumps";
 optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes", linear_solver=linear_solver);
 model = Model(optimizer);
 modelrr = Model(optimizer);
@@ -82,13 +82,13 @@ end
 vanilla_vars = DICE.model_vars(v2013R(), model, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, vanilla_params.cpricebase);
 rr_vars = DICE.model_vars(v2013R(RockyRoad), modelrr, vanilla_opt.N, vanilla_opt.fosslim, μ_ubound, fill(Inf, vanilla_opt.N));
 
-vanilla_eqs = DICE.model_eqs(OptimalPrice, model, vanilla_opt, vanilla_params, vanilla_vars);
-rr_eqs = DICE.model_eqs(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars);
+vanilla_eqs = DICE.model_eqs(OptimalPrice, model, vanilla_opt, vanilla_params, vanilla_vars, isMumps);
+rr_eqs = DICE.model_eqs(OptimalPrice, modelrr, rr_opt, rr_params, rr_vars, isMumps);
 
 v2016_vars = DICE.model_vars(v2016R(), model2016, v2016_opt.N, v2016_opt.fosslim, [if t < 30 1.0 else v2016_opt.limμ end for t in 1:v2016_opt.N], fill(Inf, v2016_opt.N));
-v2016_eqs = DICE.model_eqs(OptimalPrice, model2016, v2016_opt, v2016_params, v2016_vars);
+v2016_eqs = DICE.model_eqs(OptimalPrice, model2016, v2016_opt, v2016_params, v2016_vars, isMumps);
 v2016r2_vars = DICE.model_vars(v2016R2(), model2016r2, v2016r2_opt.N, v2016r2_opt.fosslim, [if t < 30 1.0 else v2016r2_opt.limμ end for t in 1:v2016r2_opt.N], fill(Inf, v2016r2_opt.N));
-v2016r2_eqs = DICE.model_eqs(OptimalPrice, model2016r2, v2016r2_opt, v2016r2_params, v2016r2_vars);
+v2016r2_eqs = DICE.model_eqs(OptimalPrice, model2016r2, v2016r2_opt, v2016r2_params, v2016r2_vars, isMumps);
 @testset "Model Construction" begin
     @testset "Variables" begin
         @test typeof(vanilla_vars) <: DICE.VariablesV2013

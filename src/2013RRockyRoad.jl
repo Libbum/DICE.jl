@@ -251,7 +251,7 @@ end
     yy::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output net equation
 end
 
-function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables)
+function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, params::RockyRoadParameters, vars::Variables, isMumps::Bool)
     #TODO: This is probably similar enough to pull into 2013R.jl. Need to confirm this after all scenarios are implemented.
     N = config.N;
     scale = 5/3.666;
@@ -316,7 +316,6 @@ function model_eqs(scenario::Scenario, model::Model, config::RockyRoadOptions, p
     JuMP.fix(vars.Mₐₜ[1], config.mat₀; force=true);
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
-    isMumps = linearSolver() == "mumps";
     if isMumps && typeof(scenario) <: Limit2DegreesScenario
         # We have some issues with getting this to converge
         JuMP.set_lower_bound(vars.Tₐₜ[1], 0.0);
@@ -347,6 +346,9 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
     model = Model(optimizer);
 
+    # Generate a solver test to implement DICE.jl#35 hacks.
+    isMumps = optimizer.kwargs[:linear_solver] == "mumps";
+
     params = generate_parameters(config, model);
 
     scenario_alterations(scenario, config, params);
@@ -357,7 +359,7 @@ function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables, isMumps);
 
     optimize!(model);
 
