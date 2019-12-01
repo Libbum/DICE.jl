@@ -32,6 +32,7 @@ end
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
 linear_solver = DICE.linearSolver();
+@info "Using linear solver $(linear_solver)"
 optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes", linear_solver=linear_solver);
 model = Model(optimizer);
 modelrr = Model(optimizer);

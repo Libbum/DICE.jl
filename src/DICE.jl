@@ -39,8 +39,8 @@ function options end
 # Test if system has HSL MA97 installed, fall back to MUMPS if not.
 function linearSolver(solver_name::String = "ma97")
     prob = Ipopt.createProblem(1,[1.],[1.],1,[1.],[1.],1,1,sum,sum,sum,sum);
-    Ipopt.addOption(prob, "sb", "yes");
-    Ipopt.addOption(prob, "print_level", 0);
+    #Ipopt.addOption(prob, "sb", "yes");
+    #Ipopt.addOption(prob, "print_level", 0);
     try
         # Outer try will fail if solver string is not in the list of
         # possible Ipopt solvers.
@@ -52,6 +52,7 @@ function linearSolver(solver_name::String = "ma97")
             # No error code will be returned if the solver is extant, and an Invalid_Option
             # if the library is not found.
             result_code = Ipopt.solveProblem(prob);
+            println("Travis, result code = $(result_code)");
             if Ipopt.ApplicationReturnStatus[result_code] == :Invalid_Option
                 @warn "Unable to set linear_solver = $(solver_name), defaulting to MUMPS."
                 return "mumps"
@@ -60,9 +61,11 @@ function linearSolver(solver_name::String = "ma97")
             end
         catch
             # We can use the requested solver.
+            println("Travis, no result, $(solver_name)");
             solver_name
         end
     catch
+        println("Travis, first catch");
         "mumps"
     end
 end
