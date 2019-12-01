@@ -36,16 +36,29 @@ end
 function solve end
 function options end
 
+export solve, options
+
 # Test if system has HSL MA97 installed, fall back to MUMPS if not.
 function linearSolver(solver_name::String = "ma97")
     prob = Ipopt.createProblem(1,[1.],[1.],1,[1.],[1.],1,1,sum,sum,sum,sum);
     Ipopt.addOption(prob, "sb", "yes");
     Ipopt.addOption(prob, "print_level", 0);
+    # Initially, we must check that coinhsl is installed at all if we want a HSL solver.
+    # If not, Ipopt will default to try and find any dynamically linked libhsl. If it
+    # cannot find one it will hard panic and we can't capture that failure.
+    if occursin("ma", solver_name)
+        Ipopt.addOption(prob, "linear_solver", "ma27");
+        inital_check = runLinearSolverCheck(prob);
+        if solver_name != inital_check && inital_check == "mumps"
+            @warn "Unable to set linear_solver = $(solver_name), defaulting to MUMPS."
+            return inital_check
+        end
+    end
     try
         # Outer try will fail if solver string is not in the list of
         # possible Ipopt solvers.
         # For now that's ma27, ma57, ma77, ma86, ma97, pardiso, wsmp, mumps, custom
-        travis = Ipopt.addOption(prob, "linear_solver", solver_name);
+        Ipopt.addOption(prob, "linear_solver", solver_name);
         try
             # Inner try attempts to run the dummy program and will crash because
             # the dummy is malformed.
@@ -67,7 +80,15 @@ function linearSolver(solver_name::String = "ma97")
     end
 end
 
-export solve, options
+function runLinearSolverCheck(prob::IpoptProblem)
+    result_code = Ipopt.solveProblem(prob);
+    println("result $(result_code)");
+    if Ipopt.ApplicationReturnStatus[result_code] == :Invalid_Option
+        return "mumps"
+    else
+        error("Attempts to identify linear solvers on system returned unexpected results.");
+    end
+end
 
 # Include all version implementations
 include("2013R.jl")
