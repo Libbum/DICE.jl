@@ -49,7 +49,7 @@ function linearSolver(solver_name::String = "ma97")
     if occursin("ma", solver_name)
         Ipopt.addOption(prob, "linear_solver", "ma27");
         try
-            inital_check = Ipopt.solveProblem(prob);
+            inital_check = runLinearSolverCheck(prob);
             if inital_check == "mumps"
                 # No HSL was found on the system, we return with fallback.
                 return inital_check
