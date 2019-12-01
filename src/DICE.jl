@@ -50,7 +50,7 @@ function linearSolver(solver_name::String = "ma97")
         Ipopt.addOption(prob, "linear_solver", "ma27");
         try
             # No HSL was found on the system, we return with fallback.
-            return runLinearSolverCheck(prob)
+            return runLinearSolverCheck(prob, solver_name)
         catch
             #Continue, we have access to at least some version of HSL
         end
@@ -65,7 +65,7 @@ function linearSolver(solver_name::String = "ma97")
             # the dummy is malformed.
             # No error code will be returned if the solver is extant, and an Invalid_Option
             # if the library is not found.
-            runLinearSolverCheck(prob)
+            runLinearSolverCheck(prob, solver_name)
         catch
             # We can use the requested solver.
             solver_name
@@ -75,7 +75,7 @@ function linearSolver(solver_name::String = "ma97")
     end
 end
 
-function runLinearSolverCheck(prob::IpoptProblem)
+function runLinearSolverCheck(prob::IpoptProblem, solver_name::String)
     result_code = Ipopt.solveProblem(prob);
     if Ipopt.ApplicationReturnStatus[result_code] == :Invalid_Option
         @info "Unable to set linear_solver = $(solver_name), defaulting to MUMPS."
