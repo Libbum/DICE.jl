@@ -343,11 +343,13 @@ include("ScenariosRockyRoad.jl")
 
 function solve(scenario::Scenario, version::V2013R{RockyRoadFlavour};
     config::RockyRoadOptions = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=linearSolver()))
-    model = Model(optimizer);
+    linear_solver::ipoptLinearSolver=ma97,
+    optimizer::JuMP.OptimizerFactory = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=selectLinearSolver(linear_solver)))
 
     # Generate a solver test to implement DICE.jl#35 hacks.
     isMumps = optimizer.kwargs[:linear_solver] == "mumps";
+
+    model = Model(optimizer);
 
     params = generate_parameters(config, model);
 

@@ -31,7 +31,7 @@ end
 
 # The tests shouldn't need to converge for long times,
 # so dump early and fail rather than wasting resouces on failure.
-const linear_solver = DICE.linearSolver();
+const linear_solver = DICE.selectLinearSolver();
 const isMumps = linear_solver == "mumps";
 optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes", linear_solver=linear_solver);
 model = Model(optimizer);

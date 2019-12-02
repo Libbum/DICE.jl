@@ -1,4 +1,12 @@
-# Originaly from https://github.com/tbreloff/ConcreteAbstractions.jl
+macro exported_enum(name, args...)
+    esc(quote
+        @enum($name, $(args...))
+        export $name
+        $([:(export $arg) for arg in args]...)
+        end)
+end
+
+# Code below is originaly from https://github.com/tbreloff/ConcreteAbstractions.jl
 # released under MIT. Modified to function with recent Julia versions.
 
 const _base_types = Dict{Symbol, Tuple}()
