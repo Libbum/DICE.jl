@@ -48,8 +48,8 @@ Prerequisites for using this package are [JuMP](https://github.com/JuliaOpt/JuMP
 We use [Ipopt](https://projects.coin-or.org/Ipopt) here, but it's possible to use one of your choice.
 If you don't have these packages on your system, they will be installed when you add this package.
 
-The current packaged version of Ipopt is 3.12.10, however if you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated to the latest release (currently 3.12.13).
-This package is tested against both of these two versions, so feel free to use either.
+The current packaged version of Ipopt is 3.12.10, however if you use a rolling-release OS like Arch Linux, the [coin-or-ipopt](https://aur.archlinux.org/packages/coin-or-ipopt/) package will keep your system updated to the latest release (currently 3.13.0).
+This package is tested against 3.12.10, 3.12.13 and 3.13.0, so feel free to use any of these.
 
 To use the non-packaged (more recent) version, add the following to your `~/.julia/config/startup.jl` file (create one if it doesn't exist)
 
@@ -66,9 +66,31 @@ If you've already built Ipopt.jl with the bundled version, simply build it again
 julia> import Pkg; Pkg.build("Ipopt")
 ```
 
+### Linear Solver
+
+By default, Ipopt comes packaged with the MUMPS linear solver.
+DICE.jl will always work with this solver and we will make every effort to get it to function over all scenarios.
+However, there is an unknown issue when working with this solver requiring us to use some specific modifications that make many pre-defined scenarios quite brittle.
+The problem is tracked in [issue #34](https://github.com/Libbum/DICE.jl/issues/34), which you can read about in detail there.
+In addition, MUMPS is not so efficient compared to many other solvers.
+
+Because of this, DICE.jl now attempts to use the HSL MA97 solver by default, for which you can [obtain an academic license](www.hsl.rl.ac.uk/ipopt/) for free.
+If this solver is not found on your machine, MUMPS will be the fallback.
+Additionally, providing the `linear_solver` option to the `DICE.solve` command allows you to set any linear solver your system has available.
+Note that DICE.jl is only tested against MUMPS and MA97 for the time being.
+
+If you are using Arch Linux, I have two package builds available to get you up and running with a functioning Ipopt/HSL system.
+
+- [coin-or-coinhsl](https://github.com/Libbum/Arch/blob/master/coin-or-coinhsl/PKGBUILD) (You must provide the coinhsl-2015.06.23.tar.gz file since it is licensed)
+- [coin-or-ipopt](https://github.com/Libbum/Arch/blob/master/coin-or-ipopt/PKGBUILD) (Technically the same as the AUR version, but with HSL linked)
+
+For other Linux distributions, please take a look at the above package builds and the [Ipopt installation guide](https://coin-or.github.io/Ipopt/INSTALL.html) for details on how to get your system working.
+
 ---
 
 Detailed instructions of setting up other solvers on your machine can be viewed in the [JuMP Documentation](http://www.juliaopt.org/JuMP.jl/0.18/installation.html).
+Exactly how solvers other than Ipopt perform with DICE.jl is unknown.
+Please file an issue if you need a specific solver to function and it doesn't.
 
 ### Notebooks
 
@@ -134,7 +156,8 @@ unicodeplots()
 version = v2013R(); #Vanilla flavour
 conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
 ipopt = JuMP.with_optimizer(Ipopt.Optimizer, print_level=0) #Don't print output when optimising solution
-dice = solve(BasePrice, version, config = conf, optimizer = ipopt);
+lin_solve = ma27; # Use the HSL ma27 linear solver rather than the defalt ma97. This will default to MUMPS if HSL is not on your machine.
+dice = solve(BasePrice, version, config = conf, optimizer = ipopt, linear_solver = lin_solve);
 
 r = dice.results;
 plot(r.years,r.scc,ylabel="\$ (trillion)",xlabel="Years",title="SCC",legend=false)
