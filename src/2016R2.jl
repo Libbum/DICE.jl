@@ -213,7 +213,7 @@ function model_vars(version::V2016R2, model::JuMP.Model, N::Int64, cca_ubound::F
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
 end
 
-function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2, params::ParametersV2016, vars::VariablesV2016)
+function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2, params::ParametersV2016, vars::VariablesV2016, isMumps::Bool)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -279,14 +279,16 @@ function model_eqs(scenario::Scenario, model::JuMP.Model, config::OptionsV2016R2
     JuMP.fix(vars.Mᵤₚ[1], config.mu₀; force=true);
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
-    # We can't fix these, the solution becomes concave.
-    # This is something buggy in JuMP I think. Haven't been able to pin it down.
-    if typeof(scenario) <: OptimalPriceScenario
+
+    if isMumps && typeof(scenario) <: OptimalPriceScenario
         @constraint(model, vars.Tₐₜ[1] == config.tatm₀);
         JuMP.fix(vars.K[1], config.k₀; force=true);
-    else
+    elseif isMumps
         JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
         @NLconstraint(model, vars.K[1] == config.k₀);
+    else
+        JuMP.fix(vars.K[1], config.k₀; force=true);
+        JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     end
 
     @constraint(model, vars.UTILITY == config.tstep * config.scale1 * sum(vars.CEMUTOTPER[i] for i=1:N) + config.scale2);
@@ -301,7 +303,11 @@ end
 
 function solve(scenario::Scenario, version::V2016R2;
     config::OptionsV2016R2 = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    linear_solver::ipoptLinearSolver=ma97,
+    optimizer::JuMP.OptimizerFactory = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=selectLinearSolver(linear_solver)))
+
+    # Generate a solver test to implement DICE.jl#35 hacks.
+    isMumps = optimizer.kwargs[:linear_solver] == "mumps";
 
     model = Model(optimizer);
 
@@ -313,7 +319,7 @@ function solve(scenario::Scenario, version::V2016R2;
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables, isMumps);
 
     optimize!(model);
 

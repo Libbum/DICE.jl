@@ -232,7 +232,7 @@ end
     cc::Array{ConstraintRef{Model,C,Shape} where Shape<:JuMP.AbstractShape where C,1} # Output Consumption
 end
 
-function model_eqs(scenario::Scenario, model::Model, config::VanillaOptions, params::VanillaParameters, vars::Variables)
+function model_eqs(scenario::Scenario, model::Model, config::VanillaOptions, params::VanillaParameters, vars::Variables, isMumps::Bool)
     N = config.N;
     # Equations #
     # Emissions Equation
@@ -297,7 +297,7 @@ function model_eqs(scenario::Scenario, model::Model, config::VanillaOptions, par
     JuMP.fix(vars.Mₗₒ[1], config.ml₀; force=true);
     JuMP.fix(vars.Tₗₒ[1], config.tocean₀; force=true);
 
-    if typeof(scenario) <: OptimalPriceScenario
+    if !isMumps || typeof(scenario) <: OptimalPriceScenario
         JuMP.fix(vars.K[1], config.k₀; force=true);
         JuMP.fix(vars.Tₐₜ[1], config.tatm₀; force=true);
     elseif typeof(scenario) <: BasePriceScenario
@@ -318,7 +318,11 @@ include("ScenariosVanilla.jl")
 
 function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
     config::VanillaOptions = options(version),
-    optimizer = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes"))
+    linear_solver::ipoptLinearSolver=ma97,
+    optimizer::JuMP.OptimizerFactory = with_optimizer(Ipopt.Optimizer, print_level=5, max_iter=99900,print_frequency_iter=250,sb="yes",linear_solver=selectLinearSolver(linear_solver)))
+
+    # Generate a solver test to implement DICE.jl#35 hacks.
+    isMumps = optimizer.kwargs[:linear_solver] == "mumps";
 
     model = Model(optimizer);
 
@@ -339,7 +343,7 @@ function solve(scenario::Scenario, version::V2013R{VanillaFlavour};
 
     variables = model_vars(version, model, config.N, config.fosslim, μ_ubound, cprice_ubound);
 
-    equations = model_eqs(scenario, model, config, params, variables);
+    equations = model_eqs(scenario, model, config, params, variables, isMumps);
 
     optimize!(model);
 
