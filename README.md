@@ -34,9 +34,9 @@ Since there are a number of perfectly capable open source non-linear solvers in 
 
 **In testing phase**
 - DICE-CJL
+- v2016R3
 
 **Planned**
-- v2016R3
 -  van der Ploeg safe carbon budget
 
 Suggestions and additions welcomed.
