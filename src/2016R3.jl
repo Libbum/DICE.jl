@@ -29,8 +29,8 @@ function options(version::V2016R3;
     popadj::Float64 = 0.134, #Growth rate to calibrate to 2050 pop projection
     popasym::Int = 11500, #Asymptotic population (millions)
     δk::Float64 = 0.1, #Depreciation rate on capital (per year)
-    q₀::Float64 = 105.5, #Initial world gross output 2015 (trill 2010 USD)
-    k₀::Float64 = 223.0, #Initial capital value 2015 (trill 2010 USD)
+    q₀::Float64 = 126.6, #Initial world gross output 2018 (trill 2018 USD)
+    k₀::Float64 = 267.6, #Initial capital value 2018 (trill 2018 USD)
     a₀::Float64 = 5.115, #Initial level of total factor productivity
     ga₀::Float64 = 0.076, #Initial growth rate for TFP per 5 years
     δₐ::Float64 = 0.005, #Decline rate of TFP per 5 years
@@ -62,11 +62,11 @@ function options(version::V2016R3;
     ψ₂::Float64 = 0.00236, #Damage quadratic term
     ψ₃::Float64 = 2.0, #Damage exponent
     θ₂::Float64 = 2.6, #Exponent of control cost function
-    pback::Float64 = 550.0, #Cost of backstop 2010$ per tCO2 2015
+    pback::Float64 = 660.0, #Cost of backstop 2018$ per tCO2 2015
     gback::Float64 = 0.025, #Initial cost decline backstop cost per period
-    limμ::Float64 = 1.0, #Upper limit on control rate after 2150 -- Altered from 2016R
-    tnopol::Float64 = 40.0, #Period before which no emissions controls base -- Altered from 2016R
-    cprice₀::Float64 = 2.0, #Initial base carbon price (2010$ per tCO2)
+    limμ::Float64 = 1.0, #Upper limit on control rate after 2150
+    tnopol::Float64 = 40.0, #Period before which no emissions controls base
+    cprice₀::Float64 = 2.4, #Initial base carbon price (2018$ per tCO2)
     gcprice::Float64 = 0.02, #Growth rate of base carbon price per year
     fosslim::Float64 = 6000.0, #Maximum cumulative extraction fossil fuels (GtC)
     scale1::Float64 = 0.0302455265681763, #Multiplicative scaling coefficient
@@ -113,7 +113,7 @@ function generate_parameters(c::OptionsV2016R3, model::JuMP.Model)
     ϕ₂₂::Float64 = 1 - ϕ₂₁ - c.ϕ₂₃; # Carbon cycle transition matrix coefficient
     ϕ₃₂::Float64 = c.ϕ₂₃*c.mueq/c.mleq; # Carbon cycle transition matrix coefficient
     ϕ₃₃::Float64 = 1 - ϕ₃₂; # Carbon cycle transition matrix coefficient
-    σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2010 (kgCO2 per output 2010 USD 2010)
+    σ₀::Float64 = c.e₀/(c.q₀*(1-c.μ₀)); # Carbon intensity 2015 (kgCO2 per output 2018 USD)
     λ::Float64 = c.η/c.t2xco2; # Climate model parameter
 
     @NLparameter(model, ψ₂ == c.ψ₂);
@@ -191,23 +191,23 @@ function model_vars(version::V2016R3, model::JuMP.Model, N::Int64, cca_ubound::F
     @variable(model, Mₗₒ[1:N] >= 1000.0); # Carbon concentration increase in lower oceans (GtC from 1750)
     @variable(model, E[1:N]); # Total CO2 emissions (GtCO2 per year)
     @variable(model, Eind[1:N]); # Industrial emissions (GtCO2 per year)
-    @variable(model, C[1:N] >= 2.0); # Consumption (trillions 2010 US dollars per year)
-    @variable(model, K[1:N] >= 1.0); # Capital stock (trillions 2010 US dollars)
-    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2010 USD per year)
-    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2010 USD per year)
+    @variable(model, C[1:N] >= 2.0); # Consumption (trillions 2018 US dollars per year)
+    @variable(model, K[1:N] >= 1.0); # Capital stock (trillions 2018 US dollars)
+    @variable(model, CPC[1:N] >= 0.01); #  Per capita consumption (thousands 2018 USD per year)
+    @variable(model, I[1:N] >= 0.0); # Investment (trillions 2018 USD per year)
     @variable(model, S[1:N]); # Gross savings rate as fraction of gross world product
     @variable(model, RI[1:N]); # Real interest rate (per annum)
-    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2010 USD per year)
-    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2010 USD per year)
-    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2010 USD per year)
-    @variable(model, DAMAGES[1:N]); # Damages (trillions 2010 USD per year)
+    @variable(model, Y[1:N] >= 0.0); # Gross world product net of abatement and damages (trillions 2018 USD per year)
+    @variable(model, YGROSS[1:N] >= 0.0); # Gross world product GROSS of abatement and damages (trillions 2018 USD per year)
+    @variable(model, YNET[1:N]); # Output net of damages equation (trillions 2018 USD per year)
+    @variable(model, DAMAGES[1:N]); # Damages (trillions 2018 USD per year)
     @variable(model, Ω[1:N]); # Damages as fraction of gross output
-    @variable(model, Λ[1:N]); # Cost of emissions reductions  (trillions 2010 USD per year)
-    @variable(model, MCABATE[1:N]); # Marginal cost of abatement (2010$ per ton CO2)
+    @variable(model, Λ[1:N]); # Cost of emissions reductions  (trillions 2018 USD per year)
+    @variable(model, MCABATE[1:N]); # Marginal cost of abatement (2018$ per ton CO2)
     @variable(model, CCA[1:N] <= cca_ubound); # Cumulative industrial carbon emissions (GTC)
     @variable(model, CCATOT[1:N]); # Total carbon emissions (GTC)
     @variable(model, PERIODU[1:N]); # One period utility function
-    @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2010$ per ton of CO2)
+    @variable(model, CPRICE[i=1:N] <= cprice_ubound[i]); # Carbon price (2018$ per ton of CO2)
     @variable(model, CEMUTOTPER[1:N]); # Period utility
     @variable(model, UTILITY); # Welfare function
     VariablesV2016(μ,FORC,Tₐₜ,Tₗₒ,Mₐₜ,Mᵤₚ,Mₗₒ,E,C,K,CPC,I,S,RI,Y,YGROSS,YNET,DAMAGES,MCABATE,CCA,PERIODU,UTILITY,Eind,Ω,Λ,CPRICE,CEMUTOTPER,CCATOT)
