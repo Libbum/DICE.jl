@@ -29,11 +29,11 @@ function assign_scenario(s::BasePriceScenario, model::Model, config::OptionsV201
     JuMP.set_value(params.ψ₂, config.ψ₂);
 end
 
-function assign_scenario(s::OptimalPriceScenario, model::Model, config::Options, params::ParametersV2016, vars::VariablesV2016; idx::Int64=1)
+function assign_scenario(s::OptimalPriceScenario, model::Model, config::Options, params::ParametersV2016, vars::VariablesV2016)
     JuMP.fix(vars.μ[1], config.μ₀; force=true);
 end
 
-function assign_scenario(s::Scenario, model::JuMP.Model, config::Options, params::ParametersV2016, vars::VariablesV2016; idx::Int64=1)
+function assign_scenario(s::Scenario, model::JuMP.Model, config::Options, params::ParametersV2016, vars::VariablesV2016)
     if typeof(config) <: OptionsV2016R
         error("$(s) is not a valid scenario for v2016R beta");
     else
