@@ -33,7 +33,7 @@ end
 # so dump early and fail rather than wasting resouces on failure.
 const linear_solver = DICE.selectLinearSolver();
 const isMumps = linear_solver == "mumps";
-optimizer = with_optimizer(Ipopt.Optimizer, print_frequency_iter=500, max_iter=1000, sb="yes", linear_solver=linear_solver);
+optimizer = optimizer_with_attributes(Ipopt.Optimizer, "max_iter" => 1000, "print_frequency_iter" => 500, "sb" => "yes", "linear_solver" => linear_solver);
 model = Model(optimizer);
 modelrr = Model(optimizer);
 model2016 = Model(optimizer);
