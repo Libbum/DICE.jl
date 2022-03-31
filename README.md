@@ -155,7 +155,7 @@ unicodeplots()
 
 version = v2013R(); #Vanilla flavour
 conf = options(version, limμ = 1.1); #Alter the upper limit on the control rate after 2150
-ipopt = JuMP.with_optimizer(Ipopt.Optimizer, print_level=0) #Don't print output when optimising solution
+ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "print_level"=>0) #Don't print output when optimising solution
 lin_solve = ma27; # Use the HSL ma27 linear solver rather than the defalt ma97. This will default to MUMPS if HSL is not on your machine.
 dice = solve(BasePrice, version, config = conf, optimizer = ipopt, linear_solver = lin_solve);
 
