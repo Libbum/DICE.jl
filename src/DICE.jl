@@ -83,8 +83,8 @@ function selectLinearSolver(solver_name::ipoptLinearSolver = ma97)
 end
 
 function runLinearSolverCheck(prob::IpoptProblem, solver_name_string::String)
-    result_code = Ipopt.solveProblem(prob);
-    if Ipopt.ApplicationReturnStatus[result_code] == :Invalid_Option
+    result_code = Ipopt.IpoptSolve(prob);
+    if Ipopt._STATUS_CODES[result_code] == :Invalid_Option
         @info "Unable to set linear_solver = $(solver_name_string), defaulting to MUMPS."
         return "mumps"
     else
